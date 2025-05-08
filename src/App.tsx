@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
+import image from './assets/image.png'
 import './App.css'
 
 function App() {
@@ -24,8 +25,19 @@ function App() {
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>
       </div>
-      <div>
-        <img />
+      <div style={{display: 'flex', flexWrap: 'wrap'}}>
+        <img src={image} style={{height: '200px', padding: 0, margin: 0}}/>
+        <img src={image} style={{height: '200px', padding: 0, margin: 0}}/>
+        <img src={image} style={{height: '200px', padding: 0, margin: 0}}/>
+        <img src={image} style={{height: '200px', padding: 0, margin: 0}}/>
+        <img src={image} style={{height: '200px', padding: 0, margin: 0}}/>
+        <img src={image} style={{height: '200px', padding: 0, margin: 0}}/>
+        <img src={image} style={{height: '200px', padding: 0, margin: 0}}/>
+        <img src={image} style={{height: '200px', padding: 0, margin: 0}}/>
+        <img src={image} style={{height: '200px', padding: 0, margin: 0}}/>
+        <img src={image} style={{height: '200px', padding: 0, margin: 0}}/>
+        <img src={image} style={{height: '200px', padding: 0, margin: 0}}/>
+        <img src={image} style={{height: '200px', padding: 0, margin: 0}}/>
       </div>
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
