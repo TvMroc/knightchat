@@ -1,15 +1,42 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
-import Header from './Header' // Import the Header component
-
+import Header from './Header'
+import { db } from './Firebase';
+import { collection, doc, getDocs, setDoc, type DocumentData } from 'firebase/firestore';
 
 function App() {
   const [count, setCount] = useState<number>(0);
+  const [data, setData] = useState<DocumentData[]>([]);
+  const [message, setMessage] = useState<string>('');
+  const messagesRef = collection(db, "messages");
+
+  const addMessage = async () => {
+    if (message.trim() === '') {
+      return;
+    }
+    await setDoc(doc(messagesRef), { message: message, createdAt: new Date()});
+    setMessage('');
+  }
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const querySnapshot = await getDocs(messagesRef);
+        const data = querySnapshot.docs.map(doc => doc.data());
+        setData(data);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchData();
+  }, [messagesRef]);
+
   return (
     <>
-          <Header />
+      <Header />
       <div>
         <a href="https://vite.dev" target="_blank">
           <img src={viteLogo} className="logo" alt="Vite logo" />
@@ -23,13 +50,18 @@ function App() {
         <button onClick={() => setCount(count + 1)}>
           count is {count}
         </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
+        <div>
+          {data.map((doc: DocumentData, idx: number) => (
+            <p key={idx}>{doc.message}</p>
+          ))}
+        </div>
+        <input
+          type="text"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+        />
+        <button onClick={addMessage} >add message</button>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
   )
 }
