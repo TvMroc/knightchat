@@ -105,6 +105,13 @@ h3{
   font-family: "Alex Brush", cursive;
 }
 
+.login{
+  width: 80px;
+  height: 80px;
+  margin-right: 2em;
+  margin-top: 1em;
+}
+
 .login-button {
   width: 80px;
   height: 80px;
@@ -120,4 +127,73 @@ h3{
 
 .login-button img {
   display: none;
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  background: url('./assets/userphoto.png') no-repeat center center;
+  background-size: contain;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
+  border-radius: 50%;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: 'Old English Text MT', 'Blackletter', serif;
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.avatar:hover {
+  background: url('./assets/userphoto.png') no-repeat center center;
+}
+
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.login-container h2 {
+  margin-bottom: 1em;
+  color: #aa7a2f;
+  font-family: 'Old English Text MT', 'Blackletter', serif;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  min-width: 260px;
+}
+
+.login-input {
+  padding: 0.7em;
+  font-size: 1em;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.login-submit {
+  padding: 0.7em;
+  font-size: 1em;
+  border-radius: 6px;
+  border: none;
+  background: #aa7a2f;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.login-submit:hover {
+  background: #8a5e1a;
 }
