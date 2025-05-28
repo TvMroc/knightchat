@@ -15,7 +15,6 @@ function App() {
   const [data, setData] = useState<DocumentData[]>([]);
   const [message, setMessage] = useState<string>('');
   const messagesRef = collection(db, "messages");
-  console.log("")
 
   const addMessage = async () => {
     if (message.trim() === '') {
@@ -34,6 +33,7 @@ function App() {
   const fetchData = async () => {
     try {
       const querySnapshot = await getDocs(messagesRef);
+      console.log('Fetched data:', querySnapshot.docs);
       const data = querySnapshot.docs.map(doc => doc.data());
       setData(data);
     } catch (error) {

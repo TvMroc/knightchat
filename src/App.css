@@ -8,7 +8,12 @@
   background-image: url("./assets/image.png");
   background-repeat: repeat;
   background-size: 20%;
-  overflow: -moz-hidden-unscrollable;
+}
+* {
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
 }
 
 .logo {
