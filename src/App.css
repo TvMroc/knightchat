@@ -57,6 +57,11 @@
   animation: text-spin infinite 5000s linear;
 }
 
+.button {
+  padding: 4px;
+  background-color: #3a3a3a;
+}
+
 .card {
   padding: 2em;
 }
