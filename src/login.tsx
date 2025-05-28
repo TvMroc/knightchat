@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "./Firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "./Firebase";
 import './App.css';
 
 const Login: React.FC = () => {
@@ -11,16 +11,13 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // 简单校验：查找 Firestore 是否有该用户
-    const querySnapshot = await getDocs(collection(db, "users"));
-    const user = querySnapshot.docs.find(
-      doc => doc.data().username === username && doc.data().password === password
-    );
-    if (user) {
+    try {
+      // 用邮箱登录，用户名当作邮箱
+      await signInWithEmailAndPassword(auth, username, password);
       localStorage.setItem('knightchat_user', username);
       navigate('/');
-    } else {
-      alert("Invalid username or password!");
+    } catch (error: any) {
+      alert(error.message || "Login failed!");
     }
   };
 
@@ -29,8 +26,8 @@ const Login: React.FC = () => {
       <h2>Login KnightChat</h2>
       <form onSubmit={handleSubmit} className="login-form">
         <input
-          type="text"
-          placeholder="Username"
+          type="email"
+          placeholder="Email"
           value={username}
           onChange={e => setUsername(e.target.value)}
           required

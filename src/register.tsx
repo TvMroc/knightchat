@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, addDoc } from "firebase/firestore";
-import { db } from "./Firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "./Firebase";
 import './App.css';
 
 const Register: React.FC = () => {
@@ -17,16 +17,11 @@ const Register: React.FC = () => {
       return;
     }
     try {
-      await addDoc(collection(db, "users"), {
-        username,
-        password, // 实际项目建议加密存储
-        createdAt: new Date()
-      });
-      alert(`Registration successful!\nUsername: ${username}`);
+      await createUserWithEmailAndPassword(auth, username, password);
+      alert(`Registration successful!\nEmail: ${username}`);
       navigate('/login');
-    } catch (error) {
-      alert("Registration failed!");
-      console.error(error);
+    } catch (error: any) {
+      alert(error.message || "Registration failed!");
     }
   };
 
@@ -35,8 +30,8 @@ const Register: React.FC = () => {
       <h2>Register KnightChat</h2>
       <form onSubmit={handleSubmit} className="login-form">
         <input
-          type="text"
-          placeholder="Username"
+          type="email"
+          placeholder="Email"
           value={username}
           onChange={e => setUsername(e.target.value)}
           required
