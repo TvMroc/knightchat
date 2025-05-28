@@ -7,14 +7,15 @@ import Header from './Header'
 import Login from './login';
 import Register from './register';
 import { db } from './Firebase';
-import { collection, doc, getDocs, setDoc, type DocumentData } from 'firebase/firestore';
 import Chat from './chat';
+import { collection, deleteDoc, doc, getDocs, setDoc, type DocumentData } from 'firebase/firestore';
 
 function App() {
   const [count, setCount] = useState<number>(0);
   const [data, setData] = useState<DocumentData[]>([]);
   const [message, setMessage] = useState<string>('');
   const messagesRef = collection(db, "messages");
+  console.log("")
 
   const addMessage = async () => {
     if (message.trim() === '') {
@@ -22,21 +23,27 @@ function App() {
     }
     await setDoc(doc(messagesRef), { message: message, createdAt: new Date()});
     setMessage('');
+    fetchData();
   }
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const querySnapshot = await getDocs(messagesRef);
-        const data = querySnapshot.docs.map(doc => doc.data());
-        setData(data);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-
+  const deleteMessage = async (id: number) => {
+    await deleteDoc(doc(messagesRef, id.toString()));
     fetchData();
-  }, [messagesRef]);
+  }
+
+  const fetchData = async () => {
+    try {
+      const querySnapshot = await getDocs(messagesRef);
+      const data = querySnapshot.docs.map(doc => doc.data());
+      setData(data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   return (
     <Router>
@@ -52,14 +59,13 @@ function App() {
                 <img src={reactLogo} className="logo react" alt="React logo" />
               </a>
             </div>
-            <h1>Vite + React</h1>
             <div className="card">
               <button onClick={() => setCount(count + 1)}>
                 count is {count}
               </button>
               <div>
-                {data.map((doc: DocumentData, idx: number) => (
-                  <p key={idx}>{doc.message}</p>
+                {data.map((doc: DocumentData, id: number) => (
+                  <p key={id}>{doc.message} <button onClick={() => deleteMessage(id)}>a</button></p>
                 ))}
               </div>
               <input
@@ -67,7 +73,7 @@ function App() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
               />
-              <button onClick={addMessage} >add message</button>
+              <button onClick={addMessage}>add message</button>
             </div>
           </div>
         } />
