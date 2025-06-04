@@ -36,7 +36,7 @@ const Header: React.FC = () => {
       <div className="menu">
         <a onClick={() => navigate('/')}><h3>Home</h3></a>
         <a onClick={() => navigate('/chat')}><h3>Chat</h3></a>
-        <a><h3>Post</h3></a>
+        <a onClick={() => navigate('/post')}><h3>Post</h3></a>
         <a><h3>Profile</h3></a>
       </div>
       <div className="login">

@@ -12,7 +12,6 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // 用邮箱登录，用户名当作邮箱
       await signInWithEmailAndPassword(auth, username, password);
       localStorage.setItem('knightchat_user', username);
       navigate('/');

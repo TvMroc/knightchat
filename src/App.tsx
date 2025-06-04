@@ -10,6 +10,7 @@ import Register from './register';
 import { db } from './Firebase';
 import Chat from './chat';
 import { collection, deleteDoc, doc, getDocs, QuerySnapshot, setDoc, type DocumentData } from 'firebase/firestore';
+import Post from './post';
 
 function App() {
   const [count, setCount] = useState<number>(0);
@@ -82,6 +83,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/chat" element={<Chat />} />
+        <Route path="/post" element={<Post />} />
       </Routes>
     </Router>
   )

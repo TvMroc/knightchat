@@ -1,0 +1,144 @@
+.post-page {
+  max-width: 540px;
+  margin: 2em auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  padding: 2em 2em 1em 2em;
+}
+
+.post-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  margin-bottom: 2em;
+}
+
+.post-input {
+  resize: none;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  padding: 1em;
+  font-size: 1.1em;
+  min-height: 60px;
+}
+
+.post-btn {
+  align-self: flex-end;
+  padding: 0.6em 2em;
+  border-radius: 20px;
+  border: none;
+  background: #aa7a2f;
+  color: #fff;
+  font-weight: bold;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.post-btn:hover {
+  background: #7a5822;
+}
+
+.post-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5em;
+}
+
+.post-item {
+  background: #f7f7f7;
+  border-radius: 8px;
+  padding: 1em 1.2em;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.post-author {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  font-size: 1em;
+  margin-bottom: 0.5em;
+  color: #555;
+}
+
+.post-avatar {
+  width: 32px;
+  height: 32px;
+  background: #aa7a2f;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.post-time {
+  margin-left: auto;
+  font-size: 0.9em;
+  color: #999;
+}
+
+.post-content {
+  font-size: 1.15em;
+  color: #222;
+  white-space: pre-wrap;
+}
+
+/* 图片展示样式 */
+.post-item img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* 点赞按钮样式 */
+.post-btn[disabled] {
+  background: #ccc;
+  color: #fff;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* 评论区样式 */
+.post-comments {
+  margin-top: 1em;
+  border-top: 1px solid #eee;
+  padding-top: 0.7em;
+}
+
+.post-comments-text{
+    display: flex;
+    flex-direction: column;
+    justify-content: left;
+    align-items: start;
+    font-size: 1em;
+    color: #555;
+    margin-bottom: 0.5em;
+}
+
+.post-comments input[type="text"] {
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  padding: 0.4em;
+  font-size: 1em;
+}
+
+.post-comments button {
+  background: #aa7a2f;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.3em 1em;
+  font-size: 0.95em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.post-comments button:hover:not([disabled]) {
+  background: #7a5822;
+}
