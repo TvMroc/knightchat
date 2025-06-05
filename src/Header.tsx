@@ -1,30 +1,48 @@
 import './App.css'
 import React, { useEffect, useState } from "react";
 import { useNavigate } from 'react-router-dom';
-import './App.css';
+import { db } from "./Firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<string | null>(localStorage.getItem('knightchat_user'));
+  const [nickname, setNickname] = useState<string | null>(null);
 
   useEffect(() => {
+    const fetchNickname = async () => {
+      const uid = localStorage.getItem('knightchat_user_uid');
+      if (uid) {
+        const userDoc = await getDoc(doc(db, "users", uid));
+        if (userDoc.exists()) {
+          setNickname(userDoc.data().nickname || null);
+        }
+      } else {
+        setNickname(null);
+      }
+    };
+
+    fetchNickname();
+
     const onStorage = () => {
-      setUser(localStorage.getItem('knightchat_user'));
+      fetchNickname();
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
-  // 每次页面切换时也同步一次
   useEffect(() => {
-    setUser(localStorage.getItem('knightchat_user'));
+    // 每次页面切换时也同步一次
+    const uid = localStorage.getItem('knightchat_user_uid');
+    if (uid) {
+      getDoc(doc(db, "users", uid)).then(userDoc => {
+        if (userDoc.exists()) {
+          setNickname(userDoc.data().nickname || null);
+        }
+      });
+    } else {
+      setNickname(null);
+    }
   });
-
-  const handleLogout = () => {
-    localStorage.removeItem('knightchat_user');
-    setUser(null);
-    navigate('/login');
-  };
 
   return (
     <header className="header">
@@ -40,9 +58,14 @@ const Header: React.FC = () => {
         <a><h3>Profile</h3></a>
       </div>
       <div className="login">
-        {user ? (
-          <div className="avatar" title={user} onClick={handleLogout}>
-            {user.charAt(0).toUpperCase()}
+        {nickname ? (
+          <div
+            className="avatar"
+            title={nickname}
+            onClick={() => navigate('/profile')}
+            style={{ cursor: "pointer" }}
+          >
+            {nickname.charAt(0).toUpperCase()}
           </div>
         ) : (
           <button

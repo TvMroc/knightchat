@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "./Firebase";
+import { auth, db } from "./Firebase";
+import { doc, setDoc } from "firebase/firestore";
 import './App.css';
 
 const Register: React.FC = () => {
-  const [username, setUsername] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const navigate = useNavigate();
@@ -16,9 +18,22 @@ const Register: React.FC = () => {
       alert("The two passwords do not match!");
       return;
     }
+    if (!nickname.trim()) {
+      alert("Please enter a nickname!");
+      return;
+    }
     try {
-      await createUserWithEmailAndPassword(auth, username, password);
-      alert(`Registration successful!\nEmail: ${username}`);
+      // 注册到auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      // 存储到users集合
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        email: user.email,
+        nickname: nickname,
+        createdAt: new Date()
+      });
+      alert(`Registration successful!\nEmail: ${email}`);
       navigate('/login');
     } catch (error: any) {
       alert(error.message || "Registration failed!");
@@ -30,10 +45,18 @@ const Register: React.FC = () => {
       <h2>Register KnightChat</h2>
       <form onSubmit={handleSubmit} className="login-form">
         <input
+          type="text"
+          placeholder="Nickname"
+          value={nickname}
+          onChange={e => setNickname(e.target.value)}
+          required
+          className="login-input"
+        />
+        <input
           type="email"
           placeholder="Email"
-          value={username}
-          onChange={e => setUsername(e.target.value)}
+          value={email}
+          onChange={e => setEmail(e.target.value)}
           required
           className="login-input"
         />

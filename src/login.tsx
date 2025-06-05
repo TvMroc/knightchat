@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "./Firebase";
+import { auth, db } from "./Firebase";
+import { doc, getDoc } from "firebase/firestore";
 import './App.css';
 
 const Login: React.FC = () => {
@@ -12,9 +13,18 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await signInWithEmailAndPassword(auth, username, password);
-      localStorage.setItem('knightchat_user', username);
-      navigate('/');
+      const userCredential = await signInWithEmailAndPassword(auth, username, password);
+      const user = userCredential.user;
+      // 获取 Firestore 里的 nickname
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists()) {
+        // 存储 uid，Header 组件才能识别
+        localStorage.setItem('knightchat_user_uid', user.uid);
+        localStorage.setItem('knightchat_user', username);
+        navigate('/');
+      } else {
+        alert("User data not found in database!");
+      }
     } catch (error: any) {
       alert(error.message || "Login failed!");
     }
