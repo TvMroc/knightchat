@@ -1,5 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import "./chat.css";
+import { collection, getDocs, QuerySnapshot, type DocumentData } from "firebase/firestore";
+import { db } from "./Firebase";
 
 interface Message {
   id: number;
@@ -21,11 +23,13 @@ const contacts = [
   { name: "Charlie", last: "Good night!", time: "00:12" },
 ];
 
-const Chat: React.FC = () => {
+const Chat = () => {
   const [selectedContact, setSelectedContact] = useState(contacts[0]);
   const [messages, setMessages] = useState<Message[]>(mockMessages);
   const [input, setInput] = useState("");
+  const [data, setData] = useState<QuerySnapshot<DocumentData, DocumentData>>();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesRef = collection(db, "messages");
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -39,11 +43,26 @@ const Chat: React.FC = () => {
         id: messages.length + 1,
         sender: "Me",
         content: input,
-        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        time: new Date().toLocaleTimeString(),
       },
     ]);
     setInput("");
   };
+
+  
+    const fetchData = async () => {
+      try {
+        const data = await getDocs(messagesRef);
+        setData(data);
+        console.log(data);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+  
+    useEffect(() => {
+      fetchData();
+    }, []);
 
   return (
     

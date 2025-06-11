@@ -23,7 +23,7 @@ interface Post {
 
 const storage = getStorage();
 
-const PostPage: React.FC = () => {
+const PostPage = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [content, setContent] = useState("");
   const [image, setImage] = useState<File | null>(null);
