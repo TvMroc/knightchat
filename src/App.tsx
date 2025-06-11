@@ -12,6 +12,7 @@ import Chat from './chat';
 import { collection, deleteDoc, doc, getDocs, QuerySnapshot, setDoc, type DocumentData } from 'firebase/firestore';
 import Post from './post';
 import Profile from './profile';
+import Friends from './friends';
 
 function App() {
   const [count, setCount] = useState<number>(0);
@@ -83,9 +84,11 @@ function App() {
         } />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/chat/:uid" element={<Chat />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/post" element={<Post />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/friends" element={<Friends />} />
       </Routes>
     </Router>
   )
