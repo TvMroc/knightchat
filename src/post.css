@@ -87,6 +87,8 @@
   font-size: 1.15em;
   color: #222;
   white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.7;
 }
 
 /* 图片展示样式 */
@@ -121,6 +123,9 @@
     font-size: 1em;
     color: #555;
     margin-bottom: 0.5em;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.6;
 }
 
 .post-comments input[type="text"] {
@@ -143,4 +148,8 @@
 
 .post-comments button:hover:not([disabled]) {
   background: #7a5822;
+}
+
+h4{
+  color: #333
 }

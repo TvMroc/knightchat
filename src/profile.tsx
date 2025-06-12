@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { db } from "./Firebase";
-import { doc, getDoc, updateDoc, collection, query, where, orderBy, getDocs, arrayUnion, arrayRemove } from "firebase/firestore";
+import { doc, getDoc, updateDoc, collection, query, where, orderBy, getDocs, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
@@ -16,6 +16,9 @@ interface Post {
   content: string;
   imageUrl?: string;
   createdAt: any;
+  likes?: string[];
+  comments?: { user: string; text: string; createdAt: any }[];
+  author?: string;
 }
 
 const Profile: React.FC = () => {
@@ -38,6 +41,17 @@ const Profile: React.FC = () => {
   const uid = paramUid || currentUid;
   const [isFriend, setIsFriend] = useState(false);
   const [privacy, setPrivacy] = useState(1);
+
+  // 弹窗相关
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [detailMenuOpen, setDetailMenuOpen] = useState(false);
+  const [editContent, setEditContent] = useState("");
+  const [editImage, setEditImage] = useState<File | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+
+  // 评论用户昵称映射
+  const [nicknameMap, setNicknameMap] = useState<{ [uid: string]: string }>({});
 
   useEffect(() => {
     if (!uid) {
@@ -70,12 +84,31 @@ const Profile: React.FC = () => {
         orderBy("createdAt", "desc")
       );
       const snapshot = await getDocs(q);
-      setMyPosts(
-        snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...(doc.data() as Omit<Post, "id">),
-        }))
+      const posts = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as Omit<Post, "id">),
+      }));
+      setMyPosts(posts);
+
+      // 收集所有评论用户uid
+      const commentUids = Array.from(
+        new Set(
+          posts.flatMap(post =>
+            (post.comments || []).map(c => c.user)
+          )
+        )
       );
+      // 查询所有评论用户的nickname
+      if (commentUids.length > 0) {
+        const usersSnap = await getDocs(collection(db, "users"));
+        const map: { [uid: string]: string } = {};
+        usersSnap.forEach(userDoc => {
+          if (commentUids.includes(userDoc.id)) {
+            map[userDoc.id] = userDoc.data().nickname || userDoc.id;
+          }
+        });
+        setNicknameMap(map);
+      }
     };
     fetchMyPosts();
   }, [uid]);
@@ -117,6 +150,17 @@ const Profile: React.FC = () => {
       .upload(fileName, file, { upsert: true });
     if (error) throw error;
     const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(fileName);
+    return urlData.publicUrl;
+  };
+
+  const uploadImageToSupabase = async (file: File, uid: string) => {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${uid}_${Date.now()}.${fileExt}`;
+    const { error } = await supabase.storage
+      .from("post-images")
+      .upload(fileName, file, { upsert: true });
+    if (error) throw error;
+    const { data: urlData } = supabase.storage.from("post-images").getPublicUrl(fileName);
     return urlData.publicUrl;
   };
 
@@ -172,6 +216,69 @@ const Profile: React.FC = () => {
       canShowDetail = false;
     }
   }
+
+  // 详情弹窗相关
+  const handlePostClick = (post: Post) => {
+    setSelectedPost(post);
+    setDetailMenuOpen(false);
+    setEditing(false);
+    setEditContent(post.content);
+    setEditImagePreview(post.imageUrl || null);
+    setEditImage(null);
+  };
+
+  const handleEditImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setEditImage(e.target.files[0]);
+      setEditImagePreview(URL.createObjectURL(e.target.files[0]));
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedPost) return;
+    let imageUrl = selectedPost.imageUrl;
+    if (editImage) {
+      imageUrl = await uploadImageToSupabase(editImage, currentUid!);
+    }
+    await updateDoc(doc(db, "posts", selectedPost.id), {
+      content: editContent,
+      imageUrl: imageUrl || "",
+    });
+    setEditing(false);
+    setSelectedPost(null);
+    // 刷新
+    const q = query(
+      collection(db, "posts"),
+      where("author", "==", uid),
+      orderBy("createdAt", "desc")
+    );
+    const snapshot = await getDocs(q);
+    setMyPosts(
+      snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as Omit<Post, "id">),
+      }))
+    );
+  };
+
+  const handleDeletePost = async () => {
+    if (!selectedPost) return;
+    await deleteDoc(doc(db, "posts", selectedPost.id)); // 真正删除
+    setSelectedPost(null);
+    // 刷新
+    const q = query(
+      collection(db, "posts"),
+      where("author", "==", uid),
+      orderBy("createdAt", "desc")
+    );
+    const snapshot = await getDocs(q);
+    setMyPosts(
+      snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as Omit<Post, "id">),
+      }))
+    );
+  };
 
   return (
     <div className="profile-layout">
@@ -247,12 +354,12 @@ const Profile: React.FC = () => {
           </>
         ) : (
           <>
-            <h2>{nickname}</h2>
+            <h2 className="profile-nickname">{nickname}</h2>
             {/* 只有允许时才显示详细资料 */}
             {canShowDetail && (
               <>
                 <div className="profile-email">{email}</div>
-                <div className="profile-joined">Joined: {createdAt}</div>
+                <div className="profile-joined">{createdAt}</div>
                 <div className="profile-bio">{bio}</div>
               </>
             )}
@@ -290,9 +397,14 @@ const Profile: React.FC = () => {
           <div className="profile-posts-grid">
             {myPosts.length === 0 && <div style={{ color: "#888" }}>No posts yet.</div>}
             {myPosts.map(post => (
-              <div key={post.id} className="profile-posts-grid-item">
+              <div
+                key={post.id}
+                className="profile-posts-grid-item"
+                style={{ cursor: "pointer" }}
+                onClick={() => handlePostClick(post)}
+              >
                 {post.imageUrl ? (
-                  <img src={post.imageUrl} alt="post" />
+                  <img src={post.imageUrl} alt="post" className="profile-posts-grid-img"/>
                 ) : (
                   <div className="profile-post-content only-text">{post.content}</div>
                 )}
@@ -305,6 +417,90 @@ const Profile: React.FC = () => {
           </div>
         )}
       </div>
+      {/* Post 详情弹窗 */}
+      {selectedPost && (
+        <div className="profile-post-modal-mask" onClick={() => setSelectedPost(null)}>
+          <div
+            className="profile-post-modal-content"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* 三个点菜单，仅自己可见 */}
+            {selectedPost.author === currentUid && !editing && (
+              <button
+                className="profile-post-modal-menu-btn"
+                onClick={() => setDetailMenuOpen(v => !v)}
+              >⋯</button>
+            )}
+            {selectedPost.author === currentUid && !editing && detailMenuOpen && (
+              <div className="profile-post-modal-menu-dropdown">
+                <div
+                  onClick={() => { setEditing(true); setDetailMenuOpen(false); }}
+                >Edit</div>
+                <div
+                  className="danger"
+                  onClick={handleDeletePost}
+                >Delete</div>
+              </div>
+            )}
+            {/* 编辑模式 */}
+            {editing ? (
+              <>
+                <textarea
+                  value={editContent}
+                  onChange={e => setEditContent(e.target.value)}
+                  rows={4}
+                  className="profile-post-modal-edit-textarea"
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleEditImageChange}
+                />
+                {editImagePreview && (
+                  <div style={{ margin: "1em 0" }}>
+                    <img src={editImagePreview} alt="preview" style={{ maxWidth: 200, borderRadius: 8 }} />
+                  </div>
+                )}
+                <div className="profile-post-modal-actions">
+                  <button className="profile-btn" onClick={handleSaveEdit}>Save</button>
+                  <button className="profile-btn profile-btn-cancel" style={{ marginLeft: 8 }} onClick={() => setEditing(false)}>Cancel</button>
+                </div>
+              </>
+            ) : (
+              <>
+                {selectedPost.imageUrl && (
+                  <div style={{ marginBottom: 16 }}>
+                    <img src={selectedPost.imageUrl} alt="post" className="profile-posts-grid-img" style={{ maxWidth: "100%", borderRadius: 8 }} />
+                  </div>
+                )}
+                <div className="profile-post-modal-maintext">{selectedPost.content}</div>
+                <div style={{ color: "#888", fontSize: "0.95em", marginBottom: 8 }}>
+                  Upload time:{selectedPost.createdAt?.toDate?.().toLocaleString?.() || ""}
+                </div>
+                <div style={{ marginBottom: 8 }}>
+                  👍 {selectedPost.likes?.length || 0}
+                </div>
+                <div>
+                  <b>Comments:</b>
+                  {selectedPost.comments && selectedPost.comments.length > 0 ? (
+                    selectedPost.comments.map((c, idx) => (
+                      <div key={idx} className="profile-post-modal-comment">
+                        <b>{nicknameMap[c.user] || c.user}:</b> {c.text}
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ color: "#aaa" }}>No comments</div>
+                  )}
+                </div>
+              </>
+            )}
+            <button
+              className="profile-post-modal-close"
+              onClick={() => setSelectedPost(null)}
+            >Close</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

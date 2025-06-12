@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import type { ChangeEvent } from "react";
 import { db } from "./Firebase";
-import { collection, addDoc, getDocs, orderBy, query, Timestamp, updateDoc, doc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { collection, addDoc, getDocs, orderBy, query, Timestamp, updateDoc, doc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { createClient } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
 import "./post.css";
@@ -27,7 +27,6 @@ interface Post {
   comments?: Comment[];
   nickname?: string;
   avatarUrl?: string; 
-
 }
 
 const PostPage = () => {
@@ -38,6 +37,15 @@ const PostPage = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [commentInput, setCommentInput] = useState<{ [key: string]: string }>({});
   const [nicknameMap, setNicknameMap] = useState<{ [uid: string]: { nickname: string; avatarUrl?: string } }>({});
+  const currentUid = localStorage.getItem("knightchat_user_uid") || "";
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
+
+  // 编辑图片相关
+  const [editImage, setEditImage] = useState<File | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
+  const [editOriginImageUrl, setEditOriginImageUrl] = useState<string | null>(null);
 
   // 获取所有用到的uid（作者和评论者），并查nickname
   const fetchNicknames = async (uids: string[]) => {
@@ -47,9 +55,9 @@ const PostPage = () => {
       const data = userDoc.data();
       if (uids.includes(userDoc.id)) {
         map[userDoc.id] = {
-        nickname: data.nickname || userDoc.id,
-        avatarUrl: data.avatarUrl || "",
-      };
+          nickname: data.nickname || userDoc.id,
+          avatarUrl: data.avatarUrl || "",
+        };
       }
     });
     return map;
@@ -126,6 +134,47 @@ const PostPage = () => {
     fetchPosts();
   };
 
+  const handleEditPost = (post: Post) => {
+    setEditContent(post.content);
+    setEditingPostId(post.id);
+    setEditOriginImageUrl(post.imageUrl || null);
+    setEditImage(null);
+    setEditImagePreview(post.imageUrl || null);
+    setMenuOpenId(null);
+  };
+
+  const handleEditImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setEditImage(e.target.files[0]);
+      setEditImagePreview(URL.createObjectURL(e.target.files[0]));
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingPostId) return;
+    let imageUrl = editOriginImageUrl;
+    if (editImage) {
+      const author = localStorage.getItem("knightchat_user_uid") || "Anonymous";
+      imageUrl = await uploadImageToSupabase(editImage, author);
+    }
+    await updateDoc(doc(db, "posts", editingPostId), {
+      content: editContent,
+      imageUrl: imageUrl || "",
+    });
+    setEditingPostId(null);
+    setEditContent("");
+    setEditImage(null);
+    setEditImagePreview(null);
+    setEditOriginImageUrl(null);
+    fetchPosts();
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    await deleteDoc(doc(db, "posts", postId)); // 真正删除
+    setMenuOpenId(null);
+    fetchPosts();
+  };
+
   const handleLike = async (postId: string, likes: string[]) => {
     const user = localStorage.getItem("knightchat_user_uid") || "Anonymous";
     const postRef = doc(db, "posts", postId);
@@ -159,7 +208,6 @@ const PostPage = () => {
 
   const navigate = useNavigate();
 
-
   return (
     <div className="post-page">
       <h2>Share your thoughts</h2>
@@ -171,7 +219,7 @@ const PostPage = () => {
           onChange={(e) => setContent(e.target.value)}
           rows={3}
         />
-        <input type="file" accept="image/*" onChange={handleImageChange} />
+        <input type="file" accept="image/*" onChange={handleImageChange} style={{ color: "#333" }}/>
         {imagePreview && (
           <div style={{ margin: "1em 0" }}>
             <img src={imagePreview} alt="preview" style={{ maxWidth: 200, borderRadius: 8 }} />
@@ -184,7 +232,85 @@ const PostPage = () => {
       <div className="post-list">
         {loading && <div>Loading...</div>}
         {posts.map((post) => (
-          <div className="post-item" key={post.id}>
+          <div className="post-item" key={post.id} style={{ position: "relative" }}>
+            {/* 三个点菜单，仅自己可见 */}
+            {post.author === currentUid && (
+              <div style={{ position: "absolute", top: 12, right: 12, zIndex: 2 }}>
+                <button
+                  style={{
+                    background: "none",
+                    border: "none",
+                    fontSize: "1.5em",
+                    cursor: "pointer",
+                    padding: 0,
+                  }}
+                  onClick={() => setMenuOpenId(menuOpenId === post.id ? null : post.id)}
+                >⋯</button>
+                {menuOpenId === post.id && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      right: 0,
+                      top: "2em",
+                      background: "#fff",
+                      border: "1px solid #ddd",
+                      borderRadius: 6,
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                      zIndex: 10,
+                      minWidth: 100,
+                    }}
+                  >
+                    <div
+                      style={{ padding: "0.7em 1em", cursor: "pointer", color: "#333" }}
+                      onClick={() => handleEditPost(post)}
+                    >Edit</div>
+                    <div
+                      style={{ padding: "0.7em 1em", cursor: "pointer", color: "#d00" }}
+                      onClick={() => handleDeletePost(post.id)}
+                    >Delete</div>
+                  </div>
+                )}
+              </div>
+            )}
+            {/* 编辑弹窗 */}
+            {editingPostId === post.id && (
+              <div
+                style={{
+                  position: "fixed",
+                  top: 0, left: 0, right: 0, bottom: 0,
+                  background: "rgba(0,0,0,0.2)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  zIndex: 100,
+                }}
+                onClick={() => setEditingPostId(null)}
+              >
+                <div
+                  style={{ background: "#fff", padding: 24, borderRadius: 8, minWidth: 300 }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <h4>Edit</h4>
+                  <textarea
+                    value={editContent}
+                    onChange={e => setEditContent(e.target.value)}
+                    rows={4}
+                    style={{ width: "100%", marginBottom: 12 }}
+                  />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleEditImageChange}
+                    style={{ color: "#333", marginBottom: 12 }}
+                  />
+                  {editImagePreview && (
+                    <div style={{ margin: "1em 0" }}>
+                      <img src={editImagePreview} alt="preview" style={{ maxWidth: 200, borderRadius: 8 }} />
+                    </div>
+                  )}
+                  <button className="post-btn" onClick={handleSaveEdit}>Save</button>
+                  <button className="post-btn" style={{ marginLeft: 8 }} onClick={() => setEditingPostId(null)}>Cancel</button>
+                </div>
+              </div>
+            )}
             <div className="post-author">
               {post.avatarUrl ? (
                 <img
