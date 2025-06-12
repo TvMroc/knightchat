@@ -8,6 +8,7 @@ interface User {
   uid: string;
   nickname: string;
   email: string;
+  avatarUrl?: string;
 }
 
 const Friends: React.FC = () => {
@@ -30,6 +31,7 @@ const Friends: React.FC = () => {
           uid: docSnap.id,
           nickname: data.nickname || "",
           email: data.email || "",
+          avatarUrl: data.avatarUrl || "",
         });
       });
       users.sort((a, b) => a.nickname.localeCompare(b.nickname));
@@ -101,24 +103,29 @@ const Friends: React.FC = () => {
     }
   };
 
+  // 跳转到profile
+  const goProfile = (uid: string) => {
+    navigate(`/profile/${uid}`);
+  };
+
   return (
     <div className="friends-container">
       <h2 className="friends-title">My Friends</h2>
       <div className="friends-search-bar">
-          <input
-            type="text"
-            placeholder="Search my friends"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="friends-search-input"
-          />
-          <button
-            className="friends-btn"
-            onClick={() => setShowAdd(true)}
-          >
-            Add Friends
-          </button>
-        </div>
+        <input
+          type="text"
+          placeholder="Search my friends"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="friends-search-input"
+        />
+        <button
+          className="friends-btn"
+          onClick={() => setShowAdd(true)}
+        >
+          Add Friends
+        </button>
+      </div>
       <div className="friends-content-scroll">
         <ul className="friends-list">
           {searchResults.length === 0 && (
@@ -126,8 +133,24 @@ const Friends: React.FC = () => {
           )}
           {searchResults.map(f => (
             <li key={f.uid} className="friends-list-item">
-              <div className="friends-avatar">{f.nickname.charAt(0).toUpperCase()}</div>
-              <span className="friends-nickname">{f.nickname}</span>
+              <div
+                className="friends-avatar"
+                style={{ cursor: "pointer" }}
+                onClick={() => goProfile(f.uid)}
+              >
+                {f.avatarUrl ? (
+                  <img src={f.avatarUrl} alt="avatar" className="friends-avatar-img" />
+                ) : (
+                  f.nickname.charAt(0).toUpperCase()
+                )}
+              </div>
+              <span
+                className="friends-nickname"
+                style={{ cursor: "pointer" }}
+                onClick={() => goProfile(f.uid)}
+              >
+                {f.nickname}
+              </span>
               <button
                 className="friends-btn friends-chat-btn"
                 onClick={() => navigate(`/chat/${f.uid}`)}
@@ -158,7 +181,15 @@ const Friends: React.FC = () => {
                   className="friends-list-item friends-list-item-add"
                   onClick={() => handleAddFriend(u.uid)}
                 >
-                  <div className="friends-avatar">{u.nickname.charAt(0).toUpperCase()}</div>
+                  <div
+                    className="friends-avatar"
+                  >
+                    {u.avatarUrl ? (
+                      <img src={u.avatarUrl} alt="avatar" className="friends-avatar-img" />
+                    ) : (
+                      u.nickname.charAt(0).toUpperCase()
+                    )}
+                  </div>
                   <span className="friends-nickname">{u.nickname}</span>
                 </li>
               ))}
@@ -176,8 +207,24 @@ const Friends: React.FC = () => {
           <ul className="friends-list">
             {allUsers.map(u => (
               <li key={u.uid} className="friends-list-item">
-                <div className="friends-avatar friends-avatar-small">{u.nickname.charAt(0).toUpperCase()}</div>
-                <span className="friends-nickname">{u.nickname}</span>
+                <div
+                  className="friends-avatar friends-avatar-small"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => goProfile(u.uid)}
+                >
+                  {u.avatarUrl ? (
+                    <img src={u.avatarUrl} alt="avatar" className="friends-avatar-img" />
+                  ) : (
+                    u.nickname.charAt(0).toUpperCase()
+                  )}
+                </div>
+                <span
+                  className="friends-nickname"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => goProfile(u.uid)}
+                >
+                  {u.nickname}
+                </span>
                 <span className="friends-email">{u.email}</span>
               </li>
             ))}

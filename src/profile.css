@@ -166,6 +166,12 @@
   height: 100%;
 }
 
+.profile-privacy-select-label {
+  font-size: 1.1em;
+  color: #555;
+  margin-bottom: 0.5em;
+}
+
 /* 小格子纯文字内容：少时居中，多时顶部对齐并省略 */
 .profile-post-content.only-text {
   width: 100%;

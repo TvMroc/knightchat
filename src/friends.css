@@ -146,7 +146,13 @@
   color: #333;
 }
 
-
+.friends-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
 
 @media (max-width: 600px) {
   .friends-container {
