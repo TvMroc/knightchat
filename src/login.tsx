@@ -5,8 +5,8 @@ import { auth, db } from "./Firebase";
 import googleImg from "./assets/google.png";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import './App.css';
-import { useUsernamePopup } from "./Usernamepopup";
-import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
+import { useUsernamePopup } from "./UsernamePopup";
+import { doc, getDoc } from "firebase/firestore";
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -31,7 +31,6 @@ const Login = () => {
       alert(error.message || "Login failed!");
     }
   };
-  
 
   const googleLogin = () => {
     const provider = new GoogleAuthProvider();
@@ -39,15 +38,15 @@ const Login = () => {
     signInWithPopup(auth, provider)
       .then((result) => {
         // This gives you a Google Access Token. You can use it to access the Google API.
-        const credential = GoogleAuthProvider.credentialFromResult(result);
+        // const credential = GoogleAuthProvider.credentialFromResult(result);
         // const token = credential.accessToken;
         // The signed-in user info.
         const user = result.user;
         console.log("User signed in:", user);
         if ( result.operationType === 'signIn' ) {
-          localStorage.setItem('knightchat_user', user.email || username);
+        localStorage.setItem('knightchat_user_uid', user.uid);
         } else if ( result.operationType === 'link' ) {
-          showPopup(user.uid);
+          showPopup(user.uid, user.email || username);
         }
       }).catch((error) => {
         // Handle Errors here.

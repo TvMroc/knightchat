@@ -65,7 +65,7 @@ const PostPage = () => {
     }));
     // 收集所有用到的uid（作者和评论者）
     const authorUids = postArr.map(p => p.author);
-    const commentUids = postArr.flatMap(p => (p.comments || []).map(c => c.user));
+    const commentUids = postArr.flatMap(p => (p.comments || []).map((c: {user: string}) => c.user));
     const allUids = Array.from(new Set([...authorUids, ...commentUids]));
     // 获取nickname映射
     const map = await fetchNicknames(allUids);

@@ -5,20 +5,25 @@ import { db } from "./Firebase";
 export function useUsernamePopup() {
     const [id, setId] = useState("");
     const [username, setUsername] = useState("");
+    const [email, setEmail] = useState("");
     const [shown, setShown] = useState(false);
 
-    const showPopup = useCallback((id: string) => {
+    const showPopup = useCallback((id: string, email: string) => {
         setShown(true);
+        setEmail(email);
         setId(id);
     }, []);
 
     const submit = async () => {
         await setDoc(doc(db, "users", id), {
-            username,
+            uid: id,
             createdAt: Timestamp.now(),
+            email: email,
+            nickname: username,
         });
         setShown(false);
         setUsername("");
+        setEmail("");
     };
 
     const popup = shown ? (
