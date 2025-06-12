@@ -1,17 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { db } from "./Firebase";
-import { collection, addDoc, query, where, orderBy, onSnapshot, Timestamp, getDoc, doc, getDocs, QuerySnapshot } from "firebase/firestore";
+import { collection, addDoc, query, where, orderBy, onSnapshot, Timestamp, getDoc, doc, arrayUnion, updateDoc, getDocs, collectionGroup } from "firebase/firestore";
 import "./chat.css";
-import type { DocumentData } from "firebase/firestore/lite";
 
 interface Message {
-  id: string;
-  from: string;
   to: string;
   content: string;
   time: Timestamp;
-  participants: string[];
 }
 
 interface Contact {
@@ -26,10 +22,10 @@ const Chat = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [myMessages, setMyMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // 获取好友列表
   useEffect(() => {
     const fetchFriends = async () => {
       if (!currentUid) return;
@@ -37,72 +33,59 @@ const Chat = () => {
       if (userDoc.exists()) {
         const data = userDoc.data();
         const friendUids: string[] = data.friends || [];
-        // 获取好友详细信息
-        const allUsersDocs = await getDocs(collection(db, "users"));
+        const friends = await Promise.all(friendUids.map(uid => getDoc(doc(db, "users", uid))));
         const users: Contact[] = [];
-        allUsersDocs.forEach(userSnap => {
-          const udata = userSnap.data();
-          if (friendUids.includes(userSnap.id)) {
+        friends.forEach(friend => {
+          if (friend.exists()) {
+            const friendData = friend.data();
             users.push({
-              uid: userSnap.id,
-              nickname: udata.nickname || "",
-              email: udata.email || "",
+              uid: friendData.uid,
+              nickname: friendData.nickname || "",
+              email: friendData.email || "",
             });
           }
         });
         setContacts(users);
-        // 自动选中URL指定的联系人或第一个
         if (selectedUidFromUrl) {
-          const found = users.find(u => u.uid === selectedUidFromUrl);
-          setSelectedContact(found || users[0] || null);
+          setSelectedContact(users.find(u => u.uid === selectedUidFromUrl) || users[0] || null);
         } else {
           setSelectedContact(users[0] || null);
         }
       }
     };
     fetchFriends();
-    // eslint-disable-next-line
-  }, [currentUid, selectedUidFromUrl]);
+  }, []);
 
-  // 发送消息
   const handleSend = async () => {
     if (input.trim() === "" || !currentUid || !selectedContact?.uid) return;
-    const participants = [currentUid, selectedContact.uid].sort();
-    await addDoc(collection(db, "messages"), {
-      from: currentUid,
-      to: selectedContact.uid,
-      content: input,
-      time: Timestamp.now(),
-      participants, // 这里是数组
+    const userRef = doc(db, "users", currentUid);
+    await updateDoc(userRef, {
+      messages: arrayUnion({
+        to: selectedContact.uid,
+        content: input,
+        time: Timestamp.now()})
     });
     setInput("");
+    getMessages();
   };
 
-  // 实时监听当前用户与选中联系人的消息
-  useEffect(() => {
+
+  const getMessages = async () => {
     if (!currentUid || !selectedContact?.uid) return;
-    const q = query(
-      collection(db, "messages"),
-      where("participants", "array-contains", currentUid),
-      orderBy("time")
-    );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      // 只显示当前聊天对象的消息
-      const filtered = snapshot.docs
-        .map((doc) => ({
-          id: doc.id,
-          ...(doc.data() as Omit<Message, "id">),
-        }))
-        .filter(
-          (msg) =>
-            msg.participants.length === 2 &&
-            msg.participants.includes(currentUid) &&
-            msg.participants.includes(selectedContact.uid)
-        );
-      setMessages(filtered);
-    });
-    return () => unsubscribe();
-  }, [currentUid, selectedContact]);
+    const userDoc = await getDoc(doc(db, "users", currentUid));
+    
+    const msgs: Message[] = userDoc.data()?.messages;
+    const usersRef = doc(db, 'users', selectedContact?.uid || "");
+    const messages = (await getDoc(usersRef)).data()?.messages.filter((doc: {to: string, content: string, time: Timestamp}) => doc.to === currentUid);
+    const allMessages = [
+      ...msgs.filter(msg => msg.to === selectedContact.uid),
+      ...messages]
+    setMessages(allMessages.sort((a, b) => a.time.toMillis() - b.time.toMillis()));
+  }
+  
+  useEffect(() => {
+    getMessages();
+  }, [selectedContact]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -114,11 +97,7 @@ const Chat = () => {
         <div className="sidebar-header">Chats</div>
         <ul className="contact-list">
           {contacts.map((c) => (
-            <li
-              key={c.uid}
-              className={selectedContact?.uid === c.uid ? "active" : ""}
-              onClick={() => setSelectedContact(c)}
-            >
+            <li key={c.uid} className={selectedContact?.uid === c.uid ? "active" : ""} onClick={() => setSelectedContact(c)}>
               <div className="contact-avatar">{c.nickname.charAt(0).toUpperCase()}</div>
               <div className="contact-info">
                 <div className="contact-name">{c.nickname}</div>
@@ -137,11 +116,8 @@ const Chat = () => {
           )}
         </div>
         <div className="chat-messages">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`chat-message ${msg.from === currentUid ? "me" : "other"}`}
-            >
+          {selectedContact && messages.map((msg) => (
+            <div className={`chat-message ${msg.to === currentUid ? "other" : "me"}`}>
               <div className="message-content">{msg.content}</div>
               <div className="message-meta">
                 {msg.time && msg.time.toDate().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
