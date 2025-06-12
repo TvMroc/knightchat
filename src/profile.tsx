@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { db } from "./Firebase";
-import { doc, getDoc, updateDoc, collection, query, where, orderBy, getDocs } from "firebase/firestore";
+import { doc, getDoc, updateDoc, collection, query, where, orderBy, getDocs, arrayUnion, arrayRemove } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
@@ -36,6 +36,8 @@ const Profile: React.FC = () => {
   const currentUid = localStorage.getItem("knightchat_user_uid");
   const isSelf = !paramUid || paramUid === currentUid;
   const uid = paramUid || currentUid;
+  const [isFriend, setIsFriend] = useState(false);
+  const [privacy, setPrivacy] = useState(1);
 
   useEffect(() => {
     if (!uid) {
@@ -53,6 +55,7 @@ const Profile: React.FC = () => {
         setAvatarUrl(data.avatarUrl || "");
         setNewNickname(data.nickname || "");
         setNewBio(data.bio || "");
+        setPrivacy(data.privacy ?? 1); // 读取隐私设置
       }
     };
     fetchProfile();
@@ -76,6 +79,22 @@ const Profile: React.FC = () => {
     };
     fetchMyPosts();
   }, [uid]);
+
+  useEffect(() => {
+    if (isSelf || !currentUid || !paramUid) {
+      setIsFriend(false);
+      return;
+    }
+    const checkFriend = async () => {
+      const userDoc = await getDoc(doc(db, "users", currentUid));
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        const friends: string[] = data.friends || [];
+        setIsFriend(friends.includes(paramUid));
+      }
+    };
+    checkFriend();
+  }, [currentUid, paramUid, isSelf]);
 
   const handleLogout = () => {
     localStorage.removeItem("knightchat_user_uid");
@@ -113,6 +132,7 @@ const Profile: React.FC = () => {
       nickname: newNickname,
       bio: newBio,
       avatarUrl: avatarDownloadUrl,
+      privacy, // 保存隐私设置
     });
     setNickname(newNickname);
     setBio(newBio);
@@ -120,6 +140,38 @@ const Profile: React.FC = () => {
     setEditMode(false);
     setSaving(false);
   };
+
+  const handleAddFriend = async () => {
+    if (!currentUid || !paramUid) return;
+    const userRef = doc(db, "users", currentUid);
+    await updateDoc(userRef, {
+      friends: arrayUnion(paramUid),
+    });
+    setIsFriend(true);
+  };
+
+  const handleRemoveFriend = async () => {
+    if (!currentUid || !paramUid) return;
+    const userRef = doc(db, "users", currentUid);
+    await updateDoc(userRef, {
+      friends: arrayRemove(paramUid),
+    });
+    setIsFriend(false);
+  };
+
+  const handleChat = () => {
+    if (paramUid) navigate(`/chat/${paramUid}`);
+  };
+
+  // 隐私判断
+  let canShowDetail = true;
+  if (!isSelf) {
+    if (privacy === 3) {
+      canShowDetail = false;
+    } else if (privacy === 2 && !isFriend) {
+      canShowDetail = false;
+    }
+  }
 
   return (
     <div className="profile-layout">
@@ -163,6 +215,21 @@ const Profile: React.FC = () => {
               placeholder="Bio"
               maxLength={100}
             />
+            <div style={{ margin: "1em 0" }}>
+              <label className="profile-privacy-select-label">
+                <b>Privacy Settings:</b>
+                <select
+                  className="profile-privacy-select"
+                  value={privacy}
+                  onChange={e => setPrivacy(Number(e.target.value))}
+                  style={{ marginLeft: 8 }}
+                >
+                  <option value={1}>Visible to everyone</option>
+                  <option value={2}>Visible only to friends</option>
+                  <option value={3}>Invisible to everyone</option>
+                </select>
+              </label>
+            </div>
             <button
               className="profile-btn"
               onClick={handleSave}
@@ -181,10 +248,15 @@ const Profile: React.FC = () => {
         ) : (
           <>
             <h2>{nickname}</h2>
-            <div className="profile-email">{email}</div>
-            <div className="profile-joined">Joined: {createdAt}</div>
-            <div className="profile-bio">{bio}</div>
-            {isSelf && (
+            {/* 只有允许时才显示详细资料 */}
+            {canShowDetail && (
+              <>
+                <div className="profile-email">{email}</div>
+                <div className="profile-joined">Joined: {createdAt}</div>
+                <div className="profile-bio">{bio}</div>
+              </>
+            )}
+            {isSelf ? (
               <>
                 <button className="profile-btn" onClick={() => setEditMode(true)}>
                   Edit Profile
@@ -193,24 +265,45 @@ const Profile: React.FC = () => {
                   Logout
                 </button>
               </>
+            ) : (
+              <div style={{ display: "flex", gap: "1em" }}>
+                <button className="profile-btn" onClick={handleChat}>
+                  Chat
+                </button>
+                {isFriend ? (
+                  <button className="profile-btn profile-btn-cancel" onClick={handleRemoveFriend}>
+                    Remove Friend
+                  </button>
+                ) : (
+                  <button className="profile-btn" onClick={handleAddFriend}>
+                    Add Friend
+                  </button>
+                )}
+              </div>
             )}
           </>
         )}
       </div>
       {/* 右侧动态 */}
       <div className="profile-posts-section">
-        <div className="profile-posts-grid">
-          {myPosts.length === 0 && <div style={{ color: "#888" }}>No posts yet.</div>}
-          {myPosts.map(post => (
-            <div key={post.id} className="profile-posts-grid-item">
-              {post.imageUrl ? (
-                <img src={post.imageUrl} alt="post" />
-              ) : (
-                <div className="profile-post-content only-text">{post.content}</div>
-              )}
-            </div>
-          ))}
-        </div>
+        {canShowDetail ? (
+          <div className="profile-posts-grid">
+            {myPosts.length === 0 && <div style={{ color: "#888" }}>No posts yet.</div>}
+            {myPosts.map(post => (
+              <div key={post.id} className="profile-posts-grid-item">
+                {post.imageUrl ? (
+                  <img src={post.imageUrl} alt="post" />
+                ) : (
+                  <div className="profile-post-content only-text">{post.content}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ color: "#888", textAlign: "center", marginTop: "3em" }}>
+            <b>Privacy protection is enabled</b>
+          </div>
+        )}
       </div>
     </div>
   );

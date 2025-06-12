@@ -66,7 +66,7 @@
 }
 
 .profile-btn {
-  margin-top: 1em;
+  margin-top: 0.5em;
   width: 100%;
 }
 
@@ -204,4 +204,34 @@
   position: absolute;
   left: 1em;
   bottom: 1em;
+}
+
+.profile-privacy-select-label {
+  display: flex;
+  align-items: center;
+  font-size: 1.1em;
+  margin-bottom: 0.5em;
+  font-weight: 500;
+  color: #333;
+}
+
+.profile-privacy-select-label b {
+  margin-right: 0.5em;
+}
+
+.profile-privacy-select {
+  margin-left: 8px;
+  padding: 0.4em 1em;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1em;
+  background: #f8f8f8;
+  color: #333;
+  outline: none;
+  transition: border 0.2s;
+}
+
+.profile-privacy-select:focus {
+  border: 1.5px solid #8a7bff;
+  background: #f3f0ff;
 }
