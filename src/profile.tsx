@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { db } from "./Firebase";
 import { doc, getDoc, updateDoc, collection, query, where, orderBy, getDocs } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import { useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
 import "./profile.css";
 
@@ -32,9 +32,12 @@ const Profile: React.FC = () => {
   const [myPosts, setMyPosts] = useState<Post[]>([]);
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uid: paramUid } = useParams();
+  const currentUid = localStorage.getItem("knightchat_user_uid");
+  const isSelf = !paramUid || paramUid === currentUid;
+  const uid = paramUid || currentUid;
 
   useEffect(() => {
-    const uid = localStorage.getItem("knightchat_user_uid");
     if (!uid) {
       navigate("/login");
       return;
@@ -53,10 +56,9 @@ const Profile: React.FC = () => {
       }
     };
     fetchProfile();
-  }, [navigate]);
+  }, [uid, navigate]);
 
   useEffect(() => {
-    const uid = localStorage.getItem("knightchat_user_uid");
     if (!uid) return;
     const fetchMyPosts = async () => {
       const q = query(
@@ -73,7 +75,7 @@ const Profile: React.FC = () => {
       );
     };
     fetchMyPosts();
-  }, []); // 依赖项改为 []
+  }, [uid]);
 
   const handleLogout = () => {
     localStorage.removeItem("knightchat_user_uid");
@@ -120,7 +122,8 @@ const Profile: React.FC = () => {
   };
 
   return (
-    <div className="profile-container">
+    <div className="profile-layout">
+      {/* 左侧资料 */}
       <div className="profile-main">
         <div
           className="avatar"
@@ -181,35 +184,30 @@ const Profile: React.FC = () => {
             <div className="profile-email">{email}</div>
             <div className="profile-joined">Joined: {createdAt}</div>
             <div className="profile-bio">{bio}</div>
-            <button
-              className="profile-btn"
-              onClick={() => setEditMode(true)}
-            >
-              Edit Profile
-            </button>
-            <button
-              className="profile-btn profile-btn-cancel"
-              onClick={handleLogout}
-            >
-              Logout
-            </button>
+            {isSelf && (
+              <>
+                <button className="profile-btn" onClick={() => setEditMode(true)}>
+                  Edit Profile
+                </button>
+                <button className="profile-btn profile-btn-cancel" onClick={handleLogout}>
+                  Logout
+                </button>
+              </>
+            )}
           </>
         )}
       </div>
-      {/* 个人动态 */}
-      <div style={{ width: "100%", marginTop: "2em" }}>
-        <h3 style={{ marginBottom: "1em" }}>My Posts</h3>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "1.5em" }}>
+      {/* 右侧动态 */}
+      <div className="profile-posts-section">
+        <div className="profile-posts-grid">
           {myPosts.length === 0 && <div style={{ color: "#888" }}>No posts yet.</div>}
           {myPosts.map(post => (
-            <div key={post.id} style={{ width: 220, background: "#faf8f5", borderRadius: 8, padding: "1em" }}>
-              {post.imageUrl && (
-                <img src={post.imageUrl} alt="post" style={{ width: "100%", borderRadius: 6, marginBottom: 8 }} />
+            <div key={post.id} className="profile-posts-grid-item">
+              {post.imageUrl ? (
+                <img src={post.imageUrl} alt="post" />
+              ) : (
+                <div className="profile-post-content only-text">{post.content}</div>
               )}
-              <div style={{ fontSize: "1em", marginBottom: 6 }}>{post.content}</div>
-              <div style={{ color: "#aaa", fontSize: "0.95em" }}>
-                {post.createdAt?.toDate?.().toLocaleString?.() || ""}
-              </div>
             </div>
           ))}
         </div>

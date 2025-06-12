@@ -88,6 +88,7 @@ function App() {
         <Route path="/chat" element={<Chat />} />
         <Route path="/post" element={<Post />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/:uid" element={<Profile />} />
         <Route path="/friends" element={<Friends />} />
       </Routes>
     </Router>

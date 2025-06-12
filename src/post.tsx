@@ -3,6 +3,7 @@ import type { ChangeEvent } from "react";
 import { db } from "./Firebase";
 import { collection, addDoc, getDocs, orderBy, query, Timestamp, updateDoc, doc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { createClient } from "@supabase/supabase-js";
+import { useNavigate } from "react-router-dom";
 import "./post.css";
 
 // 初始化 Supabase
@@ -34,6 +35,7 @@ const PostPage = () => {
   const [content, setContent] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [commentInput, setCommentInput] = useState<{ [key: string]: string }>({});
   const [nicknameMap, setNicknameMap] = useState<{ [uid: string]: { nickname: string; avatarUrl?: string } }>({});
 
@@ -86,6 +88,7 @@ const PostPage = () => {
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setImage(e.target.files[0]);
+      setImagePreview(URL.createObjectURL(e.target.files[0])); // 预览
     }
   };
 
@@ -119,6 +122,7 @@ const PostPage = () => {
     });
     setContent("");
     setImage(null);
+    setImagePreview(null);
     fetchPosts();
   };
 
@@ -153,6 +157,9 @@ const PostPage = () => {
     fetchPosts();
   };
 
+  const navigate = useNavigate();
+
+
   return (
     <div className="post-page">
       <h2>Share your thoughts</h2>
@@ -165,6 +172,11 @@ const PostPage = () => {
           rows={3}
         />
         <input type="file" accept="image/*" onChange={handleImageChange} />
+        {imagePreview && (
+          <div style={{ margin: "1em 0" }}>
+            <img src={imagePreview} alt="preview" style={{ maxWidth: 200, borderRadius: 8 }} />
+          </div>
+        )}
         <button type="submit" className="post-btn">
           Post
         </button>
@@ -185,8 +197,10 @@ const PostPage = () => {
                     borderRadius: "50%",
                     objectFit: "cover",
                     marginRight: 8,
-                    verticalAlign: "middle"
+                    verticalAlign: "middle",
+                    cursor: "pointer"
                   }}
+                  onClick={() => navigate(`/profile/${post.author}`)}
                 />
               ) : (
                 <span className="post-avatar" style={{
@@ -200,12 +214,18 @@ const PostPage = () => {
                   justifyContent: "center",
                   fontWeight: "bold",
                   marginRight: 8,
-                  verticalAlign: "middle"
-                }}>
+                  verticalAlign: "middle",
+                  cursor: "pointer"
+                }}
+                onClick={() => navigate(`/profile/${post.author}`)}
+                >
                   {(post.nickname || post.author).charAt(0).toUpperCase()}
                 </span>
               )}
-              <span>{post.nickname || post.author}</span>
+              <span
+                style={{ cursor: "pointer", fontWeight: "bold" }}
+                onClick={() => navigate(`/profile/${post.author}`)}
+              >{post.nickname || post.author}</span>
               <span className="post-time">
                 {post.createdAt.toDate().toLocaleString()}
               </span>
