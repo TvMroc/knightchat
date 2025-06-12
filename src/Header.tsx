@@ -7,24 +7,28 @@ import { doc, getDoc } from "firebase/firestore";
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const [nickname, setNickname] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchNickname = async () => {
+    const fetchProfile = async () => {
       const uid = localStorage.getItem('knightchat_user_uid');
       if (uid) {
         const userDoc = await getDoc(doc(db, "users", uid));
         if (userDoc.exists()) {
-          setNickname(userDoc.data().nickname || null);
+          const data = userDoc.data();
+          setNickname(data.nickname || null);
+          setAvatarUrl(data.avatarUrl || null);
         }
       } else {
         setNickname(null);
+        setAvatarUrl(null);
       }
     };
 
-    fetchNickname();
+    fetchProfile();
 
     const onStorage = () => {
-      fetchNickname();
+      fetchProfile();
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
@@ -36,11 +40,14 @@ const Header: React.FC = () => {
     if (uid) {
       getDoc(doc(db, "users", uid)).then(userDoc => {
         if (userDoc.exists()) {
-          setNickname(userDoc.data().nickname || null);
+          const data = userDoc.data();
+          setNickname(data.nickname || null);
+          setAvatarUrl(data.avatarUrl || null);
         }
       });
     } else {
       setNickname(null);
+      setAvatarUrl(null);
     }
   });
 
@@ -65,7 +72,11 @@ const Header: React.FC = () => {
             onClick={() => navigate('/profile')}
             style={{ cursor: "pointer" }}
           >
-            {nickname.charAt(0).toUpperCase()}
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="avatar" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
+            ) : (
+              nickname.charAt(0).toUpperCase()
+            )}
           </div>
         ) : (
           <button

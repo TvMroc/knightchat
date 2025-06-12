@@ -1,0 +1,94 @@
+.profile-container {
+  max-width: 400px;
+  margin: 2em auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  padding: 2em;
+}
+
+.profile-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1em;
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  background: url('./assets/userphoto.png') no-repeat center center;
+  background-size: contain;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
+  border-radius: 50%;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: 'Old English Text MT', 'Blackletter', serif;
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 让所有头像图片变圆形 */
+.avatar img,
+.round-image {
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-nickname-input {
+  font-size: 1.2em;
+  padding: 0.5em;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  width: 100%;
+}
+
+.profile-bio-input {
+  font-size: 1em;
+  padding: 0.5em;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  width: 100%;
+  min-height: 60px;
+}
+
+.profile-btn {
+  margin-top: 1em;
+  width: 100%;
+}
+
+.profile-btn-cancel {
+  margin-top: 0.5em;
+  width: 100%;
+  background: #eee;
+  color: #333;
+}
+
+.profile-email {
+  color: #555;
+}
+
+.profile-joined {
+  color: #888;
+  font-size: 0.95em;
+}
+
+.profile-bio {
+  color: #666;
+  font-size: 1em;
+  margin: 0.5em 0;
+  min-height: 24px;
+}

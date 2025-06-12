@@ -2,8 +2,14 @@ import React, { useEffect, useState } from "react";
 import type { ChangeEvent } from "react";
 import { db } from "./Firebase";
 import { collection, addDoc, getDocs, orderBy, query, Timestamp, updateDoc, doc, arrayUnion, arrayRemove } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { createClient } from "@supabase/supabase-js";
 import "./post.css";
+
+// 初始化 Supabase
+const supabase = createClient(
+  "https://pncpxnxhapaahhqrvult.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBuY3B4bnhoYXBhYWhocXJ2dWx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2NDc3NDMsImV4cCI6MjA2NTIyMzc0M30.KmsH6qLMGwPPqQgsSxUalsCzfyVFKfliezfDspJFfVE"
+);
 
 interface Comment {
   user: string; // 存储uid
@@ -19,9 +25,9 @@ interface Post {
   likes?: string[];
   comments?: Comment[];
   nickname?: string;
-}
+  avatarUrl?: string; 
 
-const storage = getStorage();
+}
 
 const PostPage = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -29,16 +35,19 @@ const PostPage = () => {
   const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [commentInput, setCommentInput] = useState<{ [key: string]: string }>({});
-  const [nicknameMap, setNicknameMap] = useState<{ [uid: string]: string }>({});
+  const [nicknameMap, setNicknameMap] = useState<{ [uid: string]: { nickname: string; avatarUrl?: string } }>({});
 
   // 获取所有用到的uid（作者和评论者），并查nickname
   const fetchNicknames = async (uids: string[]) => {
-    const map: { [uid: string]: string } = {};
+    const map: { [uid: string]: { nickname: string; avatarUrl?: string } } = {};
     const usersSnapshot = await getDocs(collection(db, "users"));
     usersSnapshot.forEach(userDoc => {
       const data = userDoc.data();
       if (uids.includes(userDoc.id)) {
-        map[userDoc.id] = data.nickname || userDoc.id;
+        map[userDoc.id] = {
+        nickname: data.nickname || userDoc.id,
+        avatarUrl: data.avatarUrl || "",
+      };
       }
     });
     return map;
@@ -62,7 +71,11 @@ const PostPage = () => {
     const map = await fetchNicknames(allUids);
     setNicknameMap(map);
     // 给每个post加nickname字段
-    setPosts(postArr.map(p => ({ ...p, nickname: map[p.author] || p.author })));
+    setPosts(postArr.map(p => ({
+      ...p,
+      nickname: map[p.author]?.nickname || p.author,
+      avatarUrl: map[p.author]?.avatarUrl || "",
+    })));
     setLoading(false);
   };
 
@@ -76,15 +89,25 @@ const PostPage = () => {
     }
   };
 
+  // 上传图片到 Supabase
+  const uploadImageToSupabase = async (file: File, uid: string) => {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${uid}_${Date.now()}.${fileExt}`;
+    const { error } = await supabase.storage
+      .from("post-images")
+      .upload(fileName, file, { upsert: true });
+    if (error) throw error;
+    const { data: urlData } = supabase.storage.from("post-images").getPublicUrl(fileName);
+    return urlData.publicUrl;
+  };
+
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim() && !image) return;
     const author = localStorage.getItem("knightchat_user_uid") || "Anonymous";
     let imageUrl = "";
     if (image) {
-      const storageRef = ref(storage, `post-images/${Date.now()}_${image.name}`);
-      await uploadBytes(storageRef, image);
-      imageUrl = await getDownloadURL(storageRef);
+      imageUrl = await uploadImageToSupabase(image, author);
     }
     await addDoc(collection(db, "posts"), {
       author,
@@ -103,12 +126,10 @@ const PostPage = () => {
     const user = localStorage.getItem("knightchat_user_uid") || "Anonymous";
     const postRef = doc(db, "posts", postId);
     if (likes.includes(user)) {
-      // 已点赞，取消喜欢
       await updateDoc(postRef, {
         likes: arrayRemove(user),
       });
     } else {
-      // 未点赞，添加喜欢
       await updateDoc(postRef, {
         likes: arrayUnion(user),
       });
@@ -123,7 +144,7 @@ const PostPage = () => {
     const postRef = doc(db, "posts", postId);
     await updateDoc(postRef, {
       comments: arrayUnion({
-        user, // 存uid
+        user,
         text,
         createdAt: Timestamp.now(),
       }),
@@ -153,7 +174,37 @@ const PostPage = () => {
         {posts.map((post) => (
           <div className="post-item" key={post.id}>
             <div className="post-author">
-              <span className="post-avatar">{(post.nickname || post.author).charAt(0).toUpperCase()}</span>
+              {post.avatarUrl ? (
+                <img
+                  src={post.avatarUrl}
+                  alt="avatar"
+                  className="post-avatar"
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    marginRight: 8,
+                    verticalAlign: "middle"
+                  }}
+                />
+              ) : (
+                <span className="post-avatar" style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  background: "#aa7a2f",
+                  color: "#fff",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: "bold",
+                  marginRight: 8,
+                  verticalAlign: "middle"
+                }}>
+                  {(post.nickname || post.author).charAt(0).toUpperCase()}
+                </span>
+              )}
               <span>{post.nickname || post.author}</span>
               <span className="post-time">
                 {post.createdAt.toDate().toLocaleString()}
@@ -181,7 +232,7 @@ const PostPage = () => {
                 {post.comments?.map((c, idx) => (
                   <div key={idx} style={{ margin: "0.5em 0", fontSize: "0.98em" }}>
                     <b>
-                      {nicknameMap[c.user] || c.user}:
+                      {(nicknameMap[c.user]?.nickname || c.user)}:
                     </b> {c.text}
                   </div>
                 ))}
