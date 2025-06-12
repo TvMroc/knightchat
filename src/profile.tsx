@@ -301,7 +301,7 @@ const Profile: React.FC = () => {
           </div>
         ) : (
           <div style={{ color: "#888", textAlign: "center", marginTop: "3em" }}>
-            <b>Privacy protection is enabled</b>
+            <b>Profile is not public</b>
           </div>
         )}
       </div>
