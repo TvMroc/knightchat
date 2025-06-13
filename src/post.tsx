@@ -6,27 +6,26 @@ import { createClient } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
 import "./post.css";
 
-// 初始化 Supabase
 const supabase = createClient(
   "https://pncpxnxhapaahhqrvult.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBuY3B4bnhoYXBhYWhocXJ2dWx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2NDc3NDMsImV4cCI6MjA2NTIyMzc0M30.KmsH6qLMGwPPqQgsSxUalsCzfyVFKfliezfDspJFfVE"
 );
 
 interface Comment {
-  user: string; // 存储uid
+  user: string;
   text: string;
   createdAt: Timestamp;
 }
 interface Post {
   id: string;
-  author: string; // 存储uid
+  author: string;
   content: string;
   createdAt: Timestamp;
   imageUrl?: string;
   likes?: string[];
   comments?: Comment[];
   nickname?: string;
-  avatarUrl?: string; 
+  avatarUrl?: string;
 }
 
 const PostPage = () => {
@@ -42,12 +41,17 @@ const PostPage = () => {
   const [editContent, setEditContent] = useState("");
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
 
-  // 编辑图片相关
+  // For expand/collapse
+  const [expandedPosts, setExpandedPosts] = useState<{ [postId: string]: boolean }>({});
+  const [expandedComments, setExpandedComments] = useState<{ [postId: string]: boolean }>({});
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+
+  // For editing images
   const [editImage, setEditImage] = useState<File | null>(null);
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
   const [editOriginImageUrl, setEditOriginImageUrl] = useState<string | null>(null);
 
-  // 获取所有用到的uid（作者和评论者），并查nickname
+  // Fetch all used uids (author and commenters) and get nickname
   const fetchNicknames = async (uids: string[]) => {
     const map: { [uid: string]: { nickname: string; avatarUrl?: string } } = {};
     const usersSnapshot = await getDocs(collection(db, "users"));
@@ -73,14 +77,14 @@ const PostPage = () => {
       likes: doc.data().likes || [],
       comments: doc.data().comments || [],
     }));
-    // 收集所有用到的uid（作者和评论者）
+    // Collect all used uids (author and commenters)
     const authorUids = postArr.map(p => p.author);
     const commentUids = postArr.flatMap(p => (p.comments || []).map((c: {user: string}) => c.user));
     const allUids = Array.from(new Set([...authorUids, ...commentUids]));
-    // 获取nickname映射
+    // Get nickname mapping
     const map = await fetchNicknames(allUids);
     setNicknameMap(map);
-    // 给每个post加nickname字段
+    // Add nickname and avatarUrl to each post
     setPosts(postArr.map(p => ({
       ...p,
       nickname: map[p.author]?.nickname || p.author,
@@ -96,11 +100,10 @@ const PostPage = () => {
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setImage(e.target.files[0]);
-      setImagePreview(URL.createObjectURL(e.target.files[0])); // 预览
+      setImagePreview(URL.createObjectURL(e.target.files[0]));
     }
   };
 
-  // 上传图片到 Supabase
   const uploadImageToSupabase = async (file: File, uid: string) => {
     const fileExt = file.name.split(".").pop();
     const fileName = `${uid}_${Date.now()}.${fileExt}`;
@@ -170,7 +173,7 @@ const PostPage = () => {
   };
 
   const handleDeletePost = async (postId: string) => {
-    await deleteDoc(doc(db, "posts", postId)); // 真正删除
+    await deleteDoc(doc(db, "posts", postId));
     setMenuOpenId(null);
     fetchPosts();
   };
@@ -208,6 +211,11 @@ const PostPage = () => {
 
   const navigate = useNavigate();
 
+  // Helper: check if content needs "Show more"
+  const needsShowMore = (text: string, maxLines: number = 4) => {
+    return text.split('\n').length > maxLines || text.length > 180;
+  };
+
   return (
     <div className="post-page">
       <h2>Share your thoughts</h2>
@@ -219,10 +227,10 @@ const PostPage = () => {
           onChange={(e) => setContent(e.target.value)}
           rows={3}
         />
-        <input type="file" accept="image/*" onChange={handleImageChange} style={{ color: "#333" }}/>
+        <input type="file" accept="image/*" onChange={handleImageChange} />
         {imagePreview && (
-          <div style={{ margin: "1em 0" }}>
-            <img src={imagePreview} alt="preview" style={{ maxWidth: 200, borderRadius: 8 }} />
+          <div className="post-image-preview">
+            <img src={imagePreview} alt="preview" />
           </div>
         )}
         <button type="submit" className="post-btn">
@@ -231,178 +239,200 @@ const PostPage = () => {
       </form>
       <div className="post-list">
         {loading && <div>Loading...</div>}
-        {posts.map((post) => (
-          <div className="post-item" key={post.id} style={{ position: "relative" }}>
-            {/* 三个点菜单，仅自己可见 */}
-            {post.author === currentUid && (
-              <div style={{ position: "absolute", top: 12, right: 12, zIndex: 2 }}>
-                <button
-                  style={{
-                    background: "none",
-                    border: "none",
-                    fontSize: "1.5em",
-                    cursor: "pointer",
-                    padding: 0,
-                  }}
-                  onClick={() => setMenuOpenId(menuOpenId === post.id ? null : post.id)}
-                >⋯</button>
-                {menuOpenId === post.id && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      right: 0,
-                      top: "2em",
-                      background: "#fff",
-                      border: "1px solid #ddd",
-                      borderRadius: 6,
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-                      zIndex: 10,
-                      minWidth: 100,
-                    }}
-                  >
-                    <div
-                      style={{ padding: "0.7em 1em", cursor: "pointer", color: "#333" }}
-                      onClick={() => handleEditPost(post)}
-                    >Edit</div>
-                    <div
-                      style={{ padding: "0.7em 1em", cursor: "pointer", color: "#d00" }}
-                      onClick={() => handleDeletePost(post.id)}
-                    >Delete</div>
-                  </div>
-                )}
-              </div>
-            )}
-            {/* 编辑弹窗 */}
-            {editingPostId === post.id && (
-              <div
-                style={{
-                  position: "fixed",
-                  top: 0, left: 0, right: 0, bottom: 0,
-                  background: "rgba(0,0,0,0.2)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  zIndex: 100,
-                }}
-                onClick={() => setEditingPostId(null)}
-              >
-                <div
-                  style={{ background: "#fff", padding: 24, borderRadius: 8, minWidth: 300 }}
-                  onClick={e => e.stopPropagation()}
-                >
-                  <h4>Edit</h4>
-                  <textarea
-                    value={editContent}
-                    onChange={e => setEditContent(e.target.value)}
-                    rows={4}
-                    style={{ width: "100%", marginBottom: 12 }}
-                  />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleEditImageChange}
-                    style={{ color: "#333", marginBottom: 12 }}
-                  />
-                  {editImagePreview && (
-                    <div style={{ margin: "1em 0" }}>
-                      <img src={editImagePreview} alt="preview" style={{ maxWidth: 200, borderRadius: 8 }} />
+        {posts.map((post) => {
+          const isExpanded = expandedPosts[post.id];
+          const isCommentsExpanded = expandedComments[post.id];
+          const showComments = isCommentsExpanded ? post.comments : post.comments?.slice(0, 5);
+          const hasMoreComments = (post.comments?.length || 0) > 5;
+          return (
+            <div className="post-item" key={post.id}>
+              {/* Menu for edit/delete */}
+              {post.author === currentUid && (
+                <div className="post-menu">
+                  <button
+                    className="post-menu-btn"
+                    onClick={() => setMenuOpenId(menuOpenId === post.id ? null : post.id)}
+                  >⋯</button>
+                  {menuOpenId === post.id && (
+                    <div className="post-menu-dropdown">
+                      <div
+                        className="post-menu-edit"
+                        onClick={() => handleEditPost(post)}
+                      >Edit</div>
+                      <div
+                        className="post-menu-delete"
+                        onClick={() => handleDeletePost(post.id)}
+                      >Delete</div>
                     </div>
                   )}
-                  <button className="post-btn" onClick={handleSaveEdit}>Save</button>
-                  <button className="post-btn" style={{ marginLeft: 8 }} onClick={() => setEditingPostId(null)}>Cancel</button>
                 </div>
-              </div>
-            )}
-            <div className="post-author">
-              {post.avatarUrl ? (
-                <img
-                  src={post.avatarUrl}
-                  alt="avatar"
-                  className="post-avatar"
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: "50%",
-                    objectFit: "cover",
-                    marginRight: 8,
-                    verticalAlign: "middle",
-                    cursor: "pointer"
-                  }}
-                  onClick={() => navigate(`/profile/${post.author}`)}
-                />
-              ) : (
-                <span className="post-avatar" style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: "50%",
-                  background: "#aa7a2f",
-                  color: "#fff",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontWeight: "bold",
-                  marginRight: 8,
-                  verticalAlign: "middle",
-                  cursor: "pointer"
-                }}
-                onClick={() => navigate(`/profile/${post.author}`)}
-                >
-                  {(post.nickname || post.author).charAt(0).toUpperCase()}
-                </span>
               )}
-              <span
-                style={{ cursor: "pointer", fontWeight: "bold" }}
-                onClick={() => navigate(`/profile/${post.author}`)}
-              >{post.nickname || post.author}</span>
-              <span className="post-time">
-                {post.createdAt.toDate().toLocaleString()}
-              </span>
-            </div>
-            <div className="post-content">{post.content}</div>
-            {post.imageUrl && (
-              <div style={{ margin: "1em 0" }}>
-                <img src={post.imageUrl} alt="post" style={{ maxWidth: "100%", borderRadius: "8px" }} />
-              </div>
-            )}
-            <div style={{ display: "flex", alignItems: "center", gap: "1em" }}>
-              <button
-                className="post-btn"
-                style={{ padding: "0.3em 1em", fontSize: "0.95em" }}
-                onClick={() => handleLike(post.id, post.likes || [])}
-              >
-                {post.likes?.includes(localStorage.getItem("knightchat_user_uid") || "Anonymous")
-                  ? "👍"
-                  : "👍"} {post.likes?.length || 0}
-              </button>
-            </div>
-            <div className="post-comments">
-              <div className="post-comments-text">
-                {post.comments?.map((c, idx) => (
-                  <div key={idx} style={{ margin: "0.5em 0", fontSize: "0.98em" }}>
-                    <b>
-                      {(nicknameMap[c.user]?.nickname || c.user)}:
-                    </b> {c.text}
+              {/* Edit modal */}
+              {editingPostId === post.id && (
+                <div className="post-modal-mask" onClick={() => setEditingPostId(null)}>
+                  <div className="post-modal-content" onClick={e => e.stopPropagation()}>
+                    <h4>Edit</h4>
+                    <textarea
+                      value={editContent}
+                      onChange={e => setEditContent(e.target.value)}
+                      rows={4}
+                    />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleEditImageChange}
+                    />
+                    {editImagePreview && (
+                      <div className="post-image-preview">
+                        <img src={editImagePreview} alt="preview" />
+                      </div>
+                    )}
+                    <button className="post-btn" onClick={handleSaveEdit}>Save</button>
+                    <button className="post-btn" onClick={() => setEditingPostId(null)}>Cancel</button>
                   </div>
-                ))}
+                </div>
+              )}
+              <div className="post-author">
+                {post.avatarUrl ? (
+                  <img
+                    src={post.avatarUrl}
+                    alt="avatar"
+                    className="post-avatar"
+                    onClick={() => navigate(`/profile/${post.author}`)}
+                  />
+                ) : (
+                  <span className="post-avatar"
+                    onClick={() => navigate(`/profile/${post.author}`)}
+                  >
+                    {(post.nickname || post.author).charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <span
+                  className="post-author-nickname"
+                  onClick={() => navigate(`/profile/${post.author}`)}
+                >{post.nickname || post.author}</span>
+                <span className="post-time">
+                  {post.createdAt.toDate().toLocaleString()}
+                </span>
               </div>
-              <div style={{ display: "flex", gap: "0.5em", marginTop: "0.5em" }}>
-                <input
-                  type="text"
-                  placeholder="Add a comment..."
-                  value={commentInput[post.id] || ""}
-                  onChange={e => setCommentInput(prev => ({ ...prev, [post.id]: e.target.value }))}
-                  style={{ flex: 1, borderRadius: 6, border: "1px solid #ccc", padding: "0.4em" }}
-                />
+              {/* Post content with show more */}
+              <div
+                className={`post-content${isExpanded ? " expanded" : ""}`}
+                onClick={() => setSelectedPost(post)}
+              >
+                {post.content}
+                {!isExpanded && needsShowMore(post.content, 4) && (
+                  <span
+                    className="post-show-more"
+                    onClick={e => {
+                      e.stopPropagation();
+                      setExpandedPosts(prev => ({ ...prev, [post.id]: true }));
+                    }}
+                  > Show more </span>
+                )}
+              </div>
+              {post.imageUrl && (
+                <div className="post-image-block">
+                  <img src={post.imageUrl} alt="post" />
+                </div>
+              )}
+              <div className="post-like-row">
                 <button
                   className="post-btn"
-                  style={{ padding: "0.3em 1em", fontSize: "0.95em" }}
-                  onClick={() => handleComment(post.id)}
-                  type="button"
+                  onClick={() => handleLike(post.id, post.likes || [])}
                 >
-                  Comment
+                  👍 {post.likes?.length || 0}
                 </button>
               </div>
+              <div className="post-comments">
+                <div className="post-comments-text">
+                  {showComments?.map((c, idx) => (
+                    <div key={idx} className="post-comment-item">
+                      <b>
+                        {(nicknameMap[c.user]?.nickname || c.user)}:
+                      </b> {c.text}
+                    </div>
+                  ))}
+                  {hasMoreComments && !isCommentsExpanded && (
+                    <div
+                      className="post-show-more-comments"
+                      onClick={() => setExpandedComments(prev => ({ ...prev, [post.id]: true }))}
+                    >Show more comments</div>
+                  )}
+                </div>
+                <div className="post-comment-input-row">
+                  <input
+                    type="text"
+                    placeholder="Add a comment..."
+                    value={commentInput[post.id] || ""}
+                    onChange={e => setCommentInput(prev => ({ ...prev, [post.id]: e.target.value }))}
+                  />
+                  <button
+                    className="post-btn"
+                    onClick={() => handleComment(post.id)}
+                    type="button"
+                  >
+                    Comment
+                  </button>
+                </div>
+              </div>
+              {/* Modal for full post */}
+              {selectedPost && selectedPost.id === post.id && (
+                <div className="post-modal-mask" onClick={() => setSelectedPost(null)}>
+                  <div className="post-modal-content" onClick={e => e.stopPropagation()}>
+                    <div className="post-author">
+                      {selectedPost.avatarUrl ? (
+                        <img
+                          src={selectedPost.avatarUrl}
+                          alt="avatar"
+                          className="post-avatar"
+                          onClick={() => navigate(`/profile/${selectedPost.author}`)}
+                        />
+                      ) : (
+                        <span className="post-avatar"
+                          onClick={() => navigate(`/profile/${selectedPost.author}`)}
+                        >
+                          {(selectedPost.nickname || selectedPost.author).charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                      <span
+                        className="post-author-nickname"
+                        onClick={() => navigate(`/profile/${selectedPost.author}`)}
+                      >{selectedPost.nickname || selectedPost.author}</span>
+                      <span className="post-time">
+                        {selectedPost.createdAt.toDate().toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="post-content expanded">
+                      {selectedPost.content}
+                    </div>
+                    {selectedPost.imageUrl && (
+                      <div className="post-image-block">
+                        <img src={selectedPost.imageUrl} alt="post" />
+                      </div>
+                    )}
+                    <div>
+                      <b>All comments:</b>
+                      {selectedPost.comments && selectedPost.comments.length > 0 ? (
+                        selectedPost.comments.map((c, idx) => (
+                          <div key={idx} className="post-comment-item">
+                            <b>{nicknameMap[c.user]?.nickname || c.user}:</b> {c.text}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="post-no-comments">No comments</div>
+                      )}
+                    </div>
+                    <button
+                      className="post-btn"
+                      onClick={() => setSelectedPost(null)}
+                    >Close</button>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
