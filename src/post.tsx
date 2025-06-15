@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import type { ChangeEvent } from "react";
 import { db } from "./Firebase";
 import { collection, addDoc, getDocs, orderBy, query, Timestamp, updateDoc, doc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { createClient } from "@supabase/supabase-js";
@@ -8,7 +7,7 @@ import "./post.css";
 
 const supabase = createClient(
   "https://pncpxnxhapaahhqrvult.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBuY3B4bnhoYXBhYWhocXJ2dWx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2NDc3NDMsImV4cCI6MjA2NTIyMzc0M30.KmsH6qLMGwPPqQgsSxUalsCzfyVFKfliezfDspJFfVE"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBuY3B4bnhoYXBhYWhocXJ2dWx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2NDc3NDMsImV4cCI6MjA2NTIyMzc0M30.KmsH6qLMGwPPqQgsSxUalsCzfyVFKfliezfDspJFfVE"
 );
 
 interface Comment {
@@ -28,6 +27,12 @@ interface Post {
   avatarUrl?: string;
 }
 
+interface Friend {
+  uid: string;
+  nickname: string;
+  avatarUrl?: string;
+}
+
 const PostPage = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [content, setContent] = useState("");
@@ -41,15 +46,20 @@ const PostPage = () => {
   const [editContent, setEditContent] = useState("");
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
 
-  // For expand/collapse
-  const [expandedPosts, setExpandedPosts] = useState<{ [postId: string]: boolean }>({});
-  const [expandedComments, setExpandedComments] = useState<{ [postId: string]: boolean }>({});
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-
   // For editing images
   const [editImage, setEditImage] = useState<File | null>(null);
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
   const [editOriginImageUrl, setEditOriginImageUrl] = useState<string | null>(null);
+
+  // For modal and expand
+  const [expandedPosts, setExpandedPosts] = useState<{ [postId: string]: boolean }>({});
+  const [expandedComments, setExpandedComments] = useState<{ [postId: string]: boolean }>({});
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+
+  // For share
+  const [sharePost, setSharePost] = useState<Post | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [friends, setFriends] = useState<Friend[]>([]);
 
   // Fetch all used uids (author and commenters) and get nickname
   const fetchNicknames = async (uids: string[]) => {
@@ -65,6 +75,31 @@ const PostPage = () => {
       }
     });
     return map;
+  };
+
+  // Fetch friends for share
+  const fetchFriends = async () => {
+    if (!currentUid) return;
+    const userDoc = await getDocs(collection(db, "users"));
+    let myFriends: string[] = [];
+    userDoc.forEach(docSnap => {
+      if (docSnap.id === currentUid) {
+        myFriends = docSnap.data().friends || [];
+      }
+    });
+    // Get friend info
+    const usersSnapshot = await getDocs(collection(db, "users"));
+    const arr: Friend[] = [];
+    usersSnapshot.forEach(userDoc => {
+      if (myFriends.includes(userDoc.id)) {
+        arr.push({
+          uid: userDoc.id,
+          nickname: userDoc.data().nickname || userDoc.id,
+          avatarUrl: userDoc.data().avatarUrl || "",
+        });
+      }
+    });
+    setFriends(arr);
   };
 
   const fetchPosts = async () => {
@@ -95,15 +130,18 @@ const PostPage = () => {
 
   useEffect(() => {
     fetchPosts();
+    fetchFriends();
+    // eslint-disable-next-line
   }, []);
 
-  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setImage(e.target.files[0]);
       setImagePreview(URL.createObjectURL(e.target.files[0]));
     }
   };
 
+  // Upload image to Supabase
   const uploadImageToSupabase = async (file: File, uid: string) => {
     const fileExt = file.name.split(".").pop();
     const fileName = `${uid}_${Date.now()}.${fileExt}`;
@@ -146,7 +184,7 @@ const PostPage = () => {
     setMenuOpenId(null);
   };
 
-  const handleEditImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleEditImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setEditImage(e.target.files[0]);
       setEditImagePreview(URL.createObjectURL(e.target.files[0]));
@@ -216,6 +254,19 @@ const PostPage = () => {
     return text.split('\n').length > maxLines || text.length > 180;
   };
 
+  // 分享到好友的 chat
+  const handleShareToFriend = async (friendUid: string, post: Post) => {
+    const chatId = [currentUid, friendUid].sort().join("_");
+    await addDoc(collection(db, `chats/${chatId}/messages`), {
+      user: currentUid,
+      content: `[Shared Post]\n${post.content}`,
+      postId: post.id,
+      imageUrl: post.imageUrl || "",
+      createdAt: Timestamp.now(),
+    });
+    setShowShareModal(false);
+  };
+
   return (
     <div className="post-page">
       <h2>Share your thoughts</h2>
@@ -246,27 +297,31 @@ const PostPage = () => {
           const hasMoreComments = (post.comments?.length || 0) > 5;
           return (
             <div className="post-item" key={post.id}>
-              {/* Menu for edit/delete */}
-              {post.author === currentUid && (
-                <div className="post-menu">
-                  <button
-                    className="post-menu-btn"
-                    onClick={() => setMenuOpenId(menuOpenId === post.id ? null : post.id)}
-                  >⋯</button>
-                  {menuOpenId === post.id && (
-                    <div className="post-menu-dropdown">
-                      <div
-                        className="post-menu-edit"
-                        onClick={() => handleEditPost(post)}
-                      >Edit</div>
-                      <div
-                        className="post-menu-delete"
-                        onClick={() => handleDeletePost(post.id)}
-                      >Delete</div>
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Menu for edit/delete/share */}
+              <div className="post-menu">
+                <button
+                  className="post-menu-btn"
+                  onClick={() => setMenuOpenId(menuOpenId === post.id ? null : post.id)}
+                >⋯</button>
+                {menuOpenId === post.id && (
+                  <div className="post-menu-dropdown">
+                    {post.author === currentUid && (
+                      <>
+                        <div className="post-menu-edit" onClick={() => handleEditPost(post)}>Edit</div>
+                        <div className="post-menu-delete" onClick={() => handleDeletePost(post.id)}>Delete</div>
+                      </>
+                    )}
+                    <div
+                      className="post-menu-share"
+                      onClick={() => {
+                        setSharePost(post);
+                        setShowShareModal(true);
+                        setMenuOpenId(null);
+                      }}
+                    >Share</div>
+                  </div>
+                )}
+              </div>
               {/* Edit modal */}
               {editingPostId === post.id && (
                 <div className="post-modal-mask" onClick={() => setEditingPostId(null)}>
@@ -380,6 +435,31 @@ const PostPage = () => {
               {selectedPost && selectedPost.id === post.id && (
                 <div className="post-modal-mask" onClick={() => setSelectedPost(null)}>
                   <div className="post-modal-content" onClick={e => e.stopPropagation()}>
+                    {/* 大图弹窗的三个点 */}
+                    <div className="post-menu" style={{ position: "absolute", top: 12, right: 12 }}>
+                      <button
+                        className="post-menu-btn"
+                        onClick={() => setMenuOpenId("modal-" + post.id)}
+                      >⋯</button>
+                      {menuOpenId === "modal-" + post.id && (
+                        <div className="post-menu-dropdown">
+                          {selectedPost.author === currentUid && (
+                            <>
+                              <div className="post-menu-edit" onClick={() => handleEditPost(selectedPost)}>Edit</div>
+                              <div className="post-menu-delete" onClick={() => handleDeletePost(selectedPost.id)}>Delete</div>
+                            </>
+                          )}
+                          <div
+                            className="post-menu-share"
+                            onClick={() => {
+                              setSharePost(selectedPost);
+                              setShowShareModal(true);
+                              setMenuOpenId(null);
+                            }}
+                          >Share</div>
+                        </div>
+                      )}
+                    </div>
                     <div className="post-author">
                       {selectedPost.avatarUrl ? (
                         <img
@@ -434,6 +514,29 @@ const PostPage = () => {
           );
         })}
       </div>
+      {/* 分享弹窗 */}
+      {showShareModal && sharePost && (
+        <div className="post-modal-mask" onClick={() => setShowShareModal(false)}>
+          <div className="post-modal-content" onClick={e => e.stopPropagation()}>
+            <h4>Share to Friend</h4>
+            <ul>
+              {friends.map(friend => (
+                <li key={friend.uid} style={{ margin: "0.5em 0" }}>
+                  <button
+                    className="post-btn"
+                    onClick={async () => {
+                      await handleShareToFriend(friend.uid, sharePost);
+                    }}
+                  >
+                    {friend.nickname}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <button className="post-btn" onClick={() => setShowShareModal(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

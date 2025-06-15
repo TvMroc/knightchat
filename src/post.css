@@ -1,7 +1,8 @@
 .post-page {
   max-width: 540px;
   margin: 2em auto;
-  background: #fff;
+  /* 去掉白色背景，使用透明或body背景 */
+  background: transparent;
   border-radius: 12px;
   box-shadow: 0 2px 16px rgba(0,0,0,0.08);
   padding: 2em 2em 1em 2em;
@@ -21,6 +22,7 @@
   padding: 1em;
   font-size: 1.1em;
   min-height: 60px;
+  background: #f4ecd7;
 }
 
 .post-btn {
@@ -49,7 +51,7 @@
 }
 
 .post-item {
-  background: rgb(201, 201, 201);
+  background: rgba(170, 122, 47, 0.13); /* 半透明中世纪棕色 */
   border-radius: 8px;
   padding: 1em 1.2em;
   box-shadow: 0 1px 2px rgba(0,0,0,0.04);
@@ -77,11 +79,20 @@
   font-weight: bold;
   font-size: 1.1em;
   cursor: pointer;
+  overflow: hidden;
+}
+.post-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
 }
 
 .post-author-nickname {
   font-weight: bold;
   cursor: pointer;
+  color: #7a5822;
 }
 
 .post-time {
@@ -178,6 +189,7 @@
   border: 1px solid #ccc;
   padding: 0.4em;
   font-size: 1em;
+  background: #f4ecd7;
 }
 
 .post-modal-mask {
@@ -191,7 +203,7 @@
 }
 
 .post-modal-content {
-  background: #fff;
+  background: #f4ecd7;
   padding: 2em;
   border-radius: 14px;
   min-width: 350px;
@@ -223,15 +235,16 @@
   position: absolute;
   right: 0;
   top: 2em;
-  background: #fff;
-  border: 1px solid #ddd;
+  background: #f4ecd7;
+  border: 1px solid #aa7a2f;
   border-radius: 6px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   z-index: 10;
   min-width: 100px;
 }
 .post-menu-edit,
-.post-menu-delete {
+.post-menu-delete,
+.post-menu-share {
   padding: 0.7em 1em;
   cursor: pointer;
   font-size: 1em;
@@ -242,6 +255,7 @@
   color: #d00;
 }
 .post-menu-edit:hover,
-.post-menu-delete:hover {
-  background: #f5f5f5;
+.post-menu-delete:hover,
+.post-menu-share:hover {
+  background: #e7d7b1;
 }

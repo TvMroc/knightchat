@@ -4,6 +4,8 @@
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  width: 95%;
+  margin: auto;
 }
 
 .chat-sidebar {
@@ -55,6 +57,14 @@
   font-size: 1.3em;
   font-weight: bold;
   margin-right: 1em;
+  overflow: hidden;
+}
+.contact-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
 }
 
 .contact-info {
@@ -63,6 +73,8 @@
 
 .contact-name {
   font-weight: bold;
+  color: #e7d7b1;
+  cursor: pointer;
 }
 
 .contact-last {
@@ -113,12 +125,22 @@
   font-size: 1.3em;
   font-weight: bold;
   margin-right: 3vw;
+  overflow: hidden;
+}
+.chat-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
 }
 
 .chat-title {
   font-size: 1.47em;
   font-weight: bold;
   margin-top: 3px;
+  color: #e7d7b1;
+  cursor: pointer;
 }
 
 .chat-messages {
@@ -139,6 +161,9 @@
   font-size: 1em;
   word-break: break-word;
   filter: drop-shadow(0 0 1em #363636);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
 }
 
 .chat-message.me {
@@ -153,11 +178,50 @@
   color: #222;
 }
 
+.chat-message-avatar {
+  width: 32px;
+  height: 32px;
+  background: #aa7a2f;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.1em;
+  cursor: pointer;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.chat-message-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.chat-message-nickname {
+  font-weight: bold;
+  color: #7a5822;
+  margin-right: 0.5em;
+  cursor: pointer;
+  align-self: center;
+}
+
+.message-content {
+  flex: 1;
+  color: #222;
+  word-break: break-word;
+  font-size: 1.08em;
+}
+
 .message-meta {
   font-size: 0.8em;
   color: #888;
   margin-top: 0.2em;
   text-align: right;
+  align-self: flex-end;
 }
 
 .chat-input-area {
@@ -193,5 +257,89 @@
 }
 
 .chat-send:hover {
+  background: #7a5822;
+}
+
+/* 分享的post卡片样式 */
+.chat-shared-post {
+  background: rgba(170, 122, 47, 0.13);
+  border-radius: 8px;
+  padding: 0.5em 1em;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  cursor: pointer;
+  margin: 0.5em 0;
+  max-width: 320px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.chat-shared-post-img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin-bottom: 0.5em;
+}
+.chat-shared-post-content {
+  font-size: 1.08em;
+  color: #222;
+  word-break: break-word;
+  white-space: pre-line;
+}
+
+/* 大图弹窗复用post样式 */
+.post-modal-mask {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.post-modal-content {
+  background: #f4ecd7;
+  padding: 2em;
+  border-radius: 14px;
+  min-width: 350px;
+  max-width: 500px;
+  width: 90%;
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  color: #333;
+}
+
+.post-content.expanded {
+  font-size: 1.15em;
+  color: #222;
+  white-space: pre-line;
+  word-break: break-word;
+  line-height: 1.7;
+  margin-bottom: 0.5em;
+}
+
+.post-image-block {
+  margin: 1em 0;
+}
+.post-image-block img {
+  max-width: 100%;
+  border-radius: 8px;
+  display: block;
+}
+
+.post-btn {
+  align-self: flex-end;
+  padding: 0.6em 2em;
+  border-radius: 20px;
+  border: none;
+  background: #aa7a2f;
+  color: #fff;
+  font-weight: bold;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 1em;
+}
+
+.post-btn:hover {
   background: #7a5822;
 }

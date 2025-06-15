@@ -54,7 +54,6 @@ const Header: React.FC = () => {
   return (
     <header className="header">
       <div 
-        onClick={() => navigate('/')}
         className="logo">
         <h2>KnightChat</h2>
       </div>
