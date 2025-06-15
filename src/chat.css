@@ -1,7 +1,6 @@
 .chat-app {
   display: flex;
   height: 85vh;
-  background: #ece5dd;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 2px 16px rgba(0,0,0,0.08);
@@ -10,7 +9,6 @@
 .chat-sidebar {
   width: 260px;
   background: #202c33;
-  color: #fff;
   display: flex;
   flex-direction: column;
 }
@@ -82,20 +80,30 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: #f7f7f7;
 }
 
 .chat-header {
+  width: 100%;
   display: flex;
-  align-items: center;
-  padding: 1em;
-  background: #f0f0f0;
-  border-bottom: 1px solid #ddd;
+  padding: 0.5em;
+  height: 4em;
+  background: #363636;
+}
+
+.chat-banner {
+  display: flex;
+  width: 27%;
+  height: 100%;
+  background-size: contain;
+  flex-direction: row;
+  background-image: url('./assets/banner.png');
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 .chat-avatar {
-  width: 40px;
-  height: 40px;
+  width: 65px;
+  height: 65px;
   background: #aa7a2f;
   color: #fff;
   border-radius: 50%;
@@ -104,12 +112,13 @@
   justify-content: center;
   font-size: 1.3em;
   font-weight: bold;
-  margin-right: 1em;
+  margin-right: 3vw;
 }
 
 .chat-title {
-  font-size: 1.2em;
+  font-size: 1.47em;
   font-weight: bold;
+  margin-top: 3px;
 }
 
 .chat-messages {
@@ -119,7 +128,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.7em;
-  background: #ece5dd;
+  background: #00000077;
 }
 
 .chat-message {
@@ -129,7 +138,7 @@
   position: relative;
   font-size: 1em;
   word-break: break-word;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  filter: drop-shadow(0 0 1em #363636);
 }
 
 .chat-message.me {
@@ -140,7 +149,7 @@
 
 .chat-message.other {
   align-self: flex-start;
-  background: #fff;
+  background: #d1d1d1;
   color: #222;
 }
 
@@ -154,17 +163,20 @@
 .chat-input-area {
   display: flex;
   padding: 1em;
-  background: #f0f0f0;
-  border-top: 1px solid #ddd;
+  background: #353535;
 }
 
 .chat-input {
   flex: 1;
   padding: 0.7em 1em;
   border-radius: 20px;
-  border: 1px solid #ccc;
+  border: 1px solid #9e9e9e2c;
   font-size: 1em;
   outline: none;
+  background-color: #9e9e9e2c;
+}
+.chat-input:focus {
+  border-color: #8a8a8a;
 }
 
 .chat-send {

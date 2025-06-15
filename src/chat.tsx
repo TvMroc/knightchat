@@ -22,7 +22,6 @@ const Chat = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [myMessages, setMyMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -109,10 +108,10 @@ const Chat = () => {
       <main className="chat-main">
         <div className="chat-header">
           {selectedContact && (
-            <>
+            <div className="chat-banner">
               <div className="chat-avatar">{selectedContact.nickname.charAt(0).toUpperCase()}</div>
               <div className="chat-title">{selectedContact.nickname}</div>
-            </>
+            </div>
           )}
         </div>
         <div className="chat-messages">
