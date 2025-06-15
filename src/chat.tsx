@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { db } from "./Firebase";
 import { collection, addDoc, query, where, orderBy, onSnapshot, Timestamp, getDoc, doc, arrayUnion, updateDoc, getDocs, collectionGroup } from "firebase/firestore";
 import "./chat.css";
@@ -24,6 +24,8 @@ const Chat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
 
   useEffect(() => {
     const fetchFriends = async () => {

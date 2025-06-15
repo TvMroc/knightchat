@@ -1,0 +1,122 @@
+body {
+  background: #e7d7b1;
+}
+
+.homepage-channel {
+  max-width: 600px;
+  margin: 2em auto;
+  border-radius: 16px;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.10);
+  padding: 0;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  min-height: 80vh;
+}
+
+.homepage-title {
+  font-family: 'Old English Text MT', 'Blackletter', serif;
+  font-size: 2.2em;
+  color: #7a5822;
+  text-align: center;
+  margin: 1.5em 0 1em 0;
+  letter-spacing: 2px;
+}
+
+.homepage-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1em 0.5em 1em 0.5em;
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+
+.homepage-message-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  background: rgba(170, 122, 47, 0.13);
+  border-radius: 10px;
+  padding: 0.7em 1em;
+  font-size: 1.08em;
+  color: #222;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.homepage-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #aa7a2f;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.2em;
+  cursor: pointer;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.homepage-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.homepage-nickname {
+  font-weight: 600;
+  color: #7a5822;
+  cursor: pointer;
+  margin-right: 0.5em;
+}
+
+.homepage-message-content {
+  flex: 1;
+  color: #222;
+  word-break: break-word;
+  font-size: 1.08em;
+}
+
+.homepage-message-time {
+  color: #888;
+  font-size: 0.95em;
+  margin-left: 0.7em;
+  flex-shrink: 0;
+}
+
+.homepage-input-row {
+  display: flex;
+  gap: 0.7em;
+  margin: 1.5em 0 1em 0;
+  padding: 0 0.5em;
+}
+
+.homepage-input {
+  flex: 1;
+  border-radius: 8px;
+  border: 1px solid #aa7a2f;
+  padding: 0.7em 1em;
+  font-size: 1.1em;
+  background: #f4ecd7;
+  color: #222;
+  font-family: inherit;
+}
+
+.homepage-send-btn {
+  border-radius: 8px;
+  border: none;
+  background: #aa7a2f;
+  color: #fff;
+  font-weight: bold;
+  font-size: 1.1em;
+  padding: 0.7em 1.5em;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.homepage-send-btn:hover {
+  background: #7a5822;
+}
