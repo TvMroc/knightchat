@@ -521,7 +521,7 @@ const handleRemoveFriend = async () => {
                 {blockedUsers.includes(uid) ? (
                   <button onClick={handleUnblock}>Unblock</button>
                 ) : (
-                  <button onClick={handleBlock}>Block</button>
+                  <button className="profile-btn-block" onClick={handleBlock}>Block</button>
                 )}
               </div>
             )}

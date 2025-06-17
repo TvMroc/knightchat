@@ -89,6 +89,20 @@
   font-weight: bold;
   padding: 0.6em 2em;
 }
+.profile-btn-block {
+  margin-top: 0.5em;
+  width: 100%;
+  background: #eee;
+  color: #333;
+  
+  background: #5a260e;
+  border: none;
+  border-radius: 20px;
+  color: #fff;
+  font-weight: bold;
+  padding: 0.6em 2em;
+  
+}
 
 .profile-email {
   color: #555;
