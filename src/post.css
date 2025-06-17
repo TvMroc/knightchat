@@ -1,11 +1,138 @@
 .post-page {
-  max-width: 540px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 1000px;
+  max-height: 82vh;
   margin: 2em auto;
-  /* 去掉白色背景，使用透明或body背景 */
-  background: transparent;
   border-radius: 12px;
+  background: #1e1107;
   box-shadow: 0 2px 16px rgba(0,0,0,0.08);
-  padding: 2em 2em 1em 2em;
+  border: 4px solid #8b5e3c;
+}
+
+.post-input-box {
+  width: 95.3%;
+  padding: 1.5rem;
+  border-top-right-radius: 12px;
+  border-top-left-radius: 12px;
+  color: #f4e8d4;
+  background: #3a1f0f;
+  border-bottom: 3px groove #c29b7b;
+}
+
+.post-input {
+  width: 96.5%;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  color: #3e2f1c;
+  background: rgb(255, 243, 204);
+  border: 2px solid #8b5e3c;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.post-btn {
+  background: linear-gradient(to bottom, #b98e56, #7a5822);
+  color: white;
+  border: 2px solid #5b3e1d;
+  border-radius: 12px;
+  cursor: pointer;
+  text-shadow: 1px 1px #5b3e1d;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+
+.post-item {
+  width: 92.5%;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(170, 122, 47, 0.13),
+    rgba(170, 122, 47, 0.13) 10px,
+    rgba(170, 122, 47, 0.18) 10px,
+    rgba(170, 122, 47, 0.18) 20px
+  );
+  border: 1px solid #d3b37c;
+  border-radius: 1rem;
+  padding: 1rem;
+  margin: 1rem;
+  color: #3e2f1c;
+  position: relative;
+}
+
+.post-avatar {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(145deg, #d4aa6a, #b98e56);
+  border: 2px solid #7a5822;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: #3e2f1c;
+}
+
+.post-content {
+  flex: 1;
+  margin-left: 1rem;
+  font-size: 1.2rem;
+  white-space: pre-wrap;
+}
+
+.post-comments {
+  margin-top: 0.5rem;
+  border-top: 1px solid #d4c4a1;
+  padding-top: 0.5rem;
+}
+
+.post-comment {
+  font-size: 0.95rem;
+  padding: 0.25rem 0;
+  color: #3e2f1c;
+}
+
+.post-comment-input-row {
+  display: flex;
+  margin-top: 0.5rem;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.post-comment-input-row input[type="text"] {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #aa7a2f;
+  border-radius: 0.5rem;
+  background: #fef6df;
+  color: #3e2f1c;
+}
+
+.post-modal-content {
+  background: #fdf4dc;
+  border: 3px double #7a5822;
+  padding: 2rem;
+  border-radius: 1.5rem;
+  color: #3e2f1c;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+
+.post-modal-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.post-modal-content input[type="text"],
+.post-modal-content textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #aa7a2f;
+  border-radius: 0.5rem;
+  background: #fef6df;
+  color: #3e2f1c;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 .post-form {
@@ -18,7 +145,7 @@
 .post-input {
   resize: none;
   border-radius: 8px;
-  border: 1px solid #ccc;
+  
   padding: 1em;
   font-size: 1.1em;
   min-height: 60px;
@@ -51,8 +178,10 @@
 }
 
 .post-item {
-  background: rgba(170, 122, 47, 0.13); /* 半透明中世纪棕色 */
   border-radius: 8px;
+  background: rgb(255, 243, 204);
+  border: 2px solid #8b5e3c;
+  max-width: 100%;
   padding: 1em 1.2em;
   box-shadow: 0 1px 2px rgba(0,0,0,0.04);
   position: relative;
@@ -97,19 +226,21 @@
 
 .post-time {
   margin-left: auto;
+  margin-right: 20px;
   font-size: 0.9em;
   color: #999;
 }
 
 .post-content {
   font-size: 1.15em;
-  color: #222;
+  color: #2b1b0e;
   white-space: pre-line;
   word-break: break-word;
   line-height: 1.7;
   cursor: pointer;
   display: -webkit-box;
   -webkit-line-clamp: 4;
+  line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -119,6 +250,7 @@
 .post-content.expanded {
   display: block;
   -webkit-line-clamp: unset;
+  line-clamp: unset;
   white-space: pre-line;
   overflow: visible;
   text-overflow: unset;
@@ -230,6 +362,7 @@
   font-size: 1.5em;
   cursor: pointer;
   padding: 0;
+  color: #7a5822;
 }
 .post-menu-dropdown {
   position: absolute;

@@ -28,7 +28,6 @@ const Chat = () => {
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [nicknameMap, setNicknameMap] = useState<{ [uid: string]: { nickname: string; avatarUrl?: string } }>({});
   const [sharedPostModal, setSharedPostModal] = useState<{ postId: string; content: string; imageUrl?: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -59,7 +58,6 @@ const Chat = () => {
           }
         });
         setContacts(users);
-        setNicknameMap(map);
         if (selectedUidFromUrl) {
           setSelectedContact(users.find(u => u.uid === selectedUidFromUrl) || users[0] || null);
         } else {
