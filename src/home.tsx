@@ -21,11 +21,12 @@ export default function HomePage() {
   const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  if (!currentUid) {
-    navigate('/login');
-  }
+  
   // 获取所有消息
   useEffect(() => {
+    if (!currentUid) {
+      navigate('/login');
+    }
     const fetchMessages = async () => {
       const q = query(collection(db, "public-messages"), orderBy("createdAt", "asc"));
       const snapshot = await getDocs(q);

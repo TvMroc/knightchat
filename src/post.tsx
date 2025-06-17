@@ -7,7 +7,7 @@ import "./post.css";
 
 const supabase = createClient(
   "https://pncpxnxhapaahhqrvult.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBuY3B4bnhoYXBhYWhocXJ2dWx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2NDc3NDMsImV4cCI6MjA2NTIyMzc0M30.KmsH6qLMGwPPqQgsSxUalsCzfyVFKfliezfDspJFfVE"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBuY3B4bnhoYXBhYWhocXJ2dWx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2NDc3NDMsImV4cCI6MjA2NTIyMzc0M30.KmsH6qLMGwPPqQgsSxUalsCzfyVFKfliezfDspJFfVE"
 );
 
 interface Comment {
@@ -45,6 +45,11 @@ const PostPage = () => {
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  if (!currentUid) {
+    navigate('/login');
+  }
 
   // For editing images
   const [editImage, setEditImage] = useState<File | null>(null);
@@ -142,16 +147,23 @@ const PostPage = () => {
   };
 
   // Upload image to Supabase
-  const uploadImageToSupabase = async (file: File, uid: string) => {
+ const uploadImageToSupabase = async (file: File, uid: string) => {
+  try {
     const fileExt = file.name.split(".").pop();
     const fileName = `${uid}_${Date.now()}.${fileExt}`;
     const { error } = await supabase.storage
       .from("post-images")
       .upload(fileName, file, { upsert: true });
     if (error) throw error;
+
     const { data: urlData } = supabase.storage.from("post-images").getPublicUrl(fileName);
     return urlData.publicUrl;
-  };
+  } catch (err) {
+    console.error("Supabase upload failed", err);
+    throw err;
+  }
+};
+
 
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -246,8 +258,6 @@ const PostPage = () => {
     setCommentInput((prev) => ({ ...prev, [postId]: "" }));
     fetchPosts();
   };
-
-  const navigate = useNavigate();
 
   // Helper: check if content needs "Show more"
   const needsShowMore = (text: string, maxLines: number = 4) => {

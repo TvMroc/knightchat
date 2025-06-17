@@ -42,6 +42,7 @@ interface Contact {
 
 const Chat = () => {
   const { uid: selectedUidFromUrl } = useParams<{ uid: string }>();
+  const navigate = useNavigate();
   const currentUid = localStorage.getItem("knightchat_user_uid") || "";
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
@@ -52,10 +53,13 @@ const Chat = () => {
   }>({});
   const [sharedPostModal, setSharedPostModal] = useState<Post | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
+
 
   // 获取好友列表和昵称映射
   useEffect(() => {
+    if (!currentUid) {
+      navigate('/login');
+    }
     const fetchFriends = async () => {
       if (!currentUid) return;
       const userDoc = await getDoc(doc(db, "users", currentUid));

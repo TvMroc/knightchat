@@ -24,7 +24,7 @@ interface Post {
 interface SharedPostInModalProps {
   post: Post;
   nicknameMap: Record<string, { nickname?: string }>;
-  currentUid: string;
+  currentUid: string | null;
   onClose: () => void;
   fetchPosts: () => void; // 你现有刷新帖子列表函数
 }
@@ -42,7 +42,9 @@ export const SharedPostInModal: React.FC<SharedPostInModalProps> = ({
   fetchPosts,
 }) => {
   const navigate = useNavigate();
-
+  if (!currentUid) {
+    return null;
+  }
   const [isExpanded, setIsExpanded] = useState(false);
   const [commentInput, setCommentInput] = useState("");
   const [isCommentsExpanded, setIsCommentsExpanded] = useState(false);
