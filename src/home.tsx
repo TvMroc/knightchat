@@ -38,10 +38,33 @@ export default function HomePage() {
   const [nicknameMap, setNicknameMap] = useState<{ [uid: string]: { nickname: string; avatarUrl?: string } }>({});
   const [friends, setFriends] = useState<User[]>([]);
   const [friendRequests, setFriendRequests] = useState<User[]>([]);
+  const [messageSearch, setMessageSearch] = useState("");
+  const [userSearch, setUserSearch] = useState("");
+  const [users, setUsers] = useState<User[]>([]);
 
-  const currentUid = localStorage.getItem("knightchat_user_uid") || "";
+  const currentUid = localStorage.getItem("knightchat_user_uid") || "" ;
   const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const fetchUsers = async () => {
+    const usersSnapshot = await getDocs(collection(db, "users"));
+    const allUsers: User[] = usersSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        uid: doc.id,
+        nickname: data.nickname || "",
+        email: data.email || "",
+        avatarUrl: data.avatarUrl || "",
+      };
+    });
+    setUsers(allUsers.filter((u: User) => u.nickname.toLowerCase().includes(userSearch.toLowerCase())));
+  }
+  
+  useEffect(() => {
+    fetchUsers();
+    console.log(users);
+  },[userSearch])
+
 
   useEffect(() => {
     if (!currentUid) navigate("/login");
@@ -200,9 +223,7 @@ export default function HomePage() {
             value={input}
             onChange={e => setInput(e.target.value)}
           />
-          <button className="homepage-send-btn" type="submit">
-            Send
-          </button>
+          <button className="homepage-send-btn" type="submit">Send</button>
         </form>
       </div>
 
@@ -213,18 +234,11 @@ export default function HomePage() {
           {friends.map(f => (
             <li key={f.uid} className="homepage-friend-item">
               <div className="homepage-friend-avatar" onClick={() => navigate(`/profile/${f.uid}`)}>
-                {f.avatarUrl ? (
-                  <img src={f.avatarUrl} alt="avatar" className="homepage-friend-avatar-img" />
-                ) : (
-                  f.nickname.charAt(0).toUpperCase()
-                )}
+                {f.avatarUrl ? (<img src={f.avatarUrl} alt="avatar" className="homepage-friend-avatar-img" />
+                ) : (f.nickname.charAt(0).toUpperCase())}
               </div>
-              <span className="homepage-friend-nickname" onClick={() => navigate(`/profile/${f.uid}`)}>
-                {f.nickname}
-              </span>
-              <button className="homepage-chat-btn" onClick={() => navigate(`/chat/${f.uid}`)}>
-                Chat
-              </button>
+              <span className="homepage-friend-nickname" onClick={() => navigate(`/profile/${f.uid}`)}>{f.nickname}</span>
+              <button className="homepage-chat-btn" onClick={() => navigate(`/chat/${f.uid}`)}>Chat</button>
             </li>
           ))}
         </ul>
@@ -235,21 +249,29 @@ export default function HomePage() {
           {friendRequests.map(req => (
             <li key={req.uid} className="homepage-friend-item">
               <div className="homepage-friend-avatar" onClick={() => navigate(`/profile/${req.uid}`)}>
-                {req.avatarUrl ? (
-                  <img src={req.avatarUrl} alt="avatar" className="homepage-friend-avatar-img" />
-                ) : (
-                  req.nickname.charAt(0).toUpperCase()
-                )}
+                {req.avatarUrl ? (<img src={req.avatarUrl} alt="avatar" className="homepage-friend-avatar-img" />
+                ) : (req.nickname.charAt(0).toUpperCase())}
               </div>
-              <span className="homepage-friend-nickname" onClick={() => navigate(`/profile/${req.uid}`)}>
-                {req.nickname}
-              </span>
-              <button className="homepage-chat-btn" onClick={() => handleAcceptRequest(req.uid)}>
-                Accept
-              </button>
-              <button className="homepage-chat-btn" onClick={() => handleDeclineRequest(req.uid)}>
-                Decline
-              </button>
+              <span className="homepage-friend-nickname" onClick={() => navigate(`/profile/${req.uid}`)}>{req.nickname}</span>
+              <button className="homepage-chat-btn" onClick={() => handleAcceptRequest(req.uid)}>Accept</button>
+              <button className="homepage-chat-btn" onClick={() => handleDeclineRequest(req.uid)}>Decline</button>
+            </li>
+          ))}
+        </ul>
+
+        <br></br>
+
+        <h3>Search users</h3>
+        <input className="homepage-input" placeholder="search" type="text" value={userSearch} onChange={(e) => setUserSearch(e.target.value)}></input>
+        <ul className="homepage-friends-list">
+          {users.length === 0 && <li className="homepage-friend-empty">...</li>}
+          {users.map(req => (
+            <li key={req.uid} className="homepage-friend-item">
+              <div className="homepage-friend-avatar" onClick={() => navigate(`/profile/${req.uid}`)}>
+                {req.avatarUrl ? (<img src={req.avatarUrl} alt="avatar" className="homepage-friend-avatar-img" />
+                ) : (req.nickname.charAt(0).toUpperCase())}
+              </div>
+              <span className="homepage-friend-nickname" onClick={() => navigate(`/profile/${req.uid}`)}>{req.nickname}</span>
             </li>
           ))}
         </ul>

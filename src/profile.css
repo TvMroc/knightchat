@@ -29,7 +29,6 @@
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-family: 'Old English Text MT', 'Blackletter', serif;
   font-size: 1.5em;
   font-weight: bold;
 }
@@ -51,7 +50,6 @@
   font-size: 1.2em;
   padding: 0.5em;
   border-radius: 6px;
-  border: 1px solid #ccc;
   width: 100%;
 }
 
@@ -59,7 +57,6 @@
   font-size: 1em;
   padding: 0.5em;
   border-radius: 6px;
-  border: 1px solid #ccc;
   width: 100%;
   min-height: 60px;
 }
@@ -74,6 +71,11 @@
   color: #fff;
   font-weight: bold;
   padding: 0.6em 2em;
+  transition: background 0.2s, transform 0.1s;
+}
+.profile-btn:hover {
+  background: #a26a24;
+  transform: scale(1.05);
 }
 
 .profile-btn-cancel {
@@ -89,19 +91,28 @@
   font-weight: bold;
   padding: 0.6em 2em;
 }
+
+.profile-btn-cancel:hover {
+  background: #6e4c15;
+  transform: scale(1.05);
+}
 .profile-btn-block {
   margin-top: 0.5em;
   width: 100%;
   background: #eee;
   color: #333;
-  
   background: #5a260e;
   border: none;
   border-radius: 20px;
   color: #fff;
   font-weight: bold;
   padding: 0.6em 2em;
-  
+  transition: background 0.2s, transform 0.1s;
+}
+
+.profile-btn-block:hover { 
+  background: #50220c;;
+  transform: scale(1.05);
 }
 
 .profile-email {

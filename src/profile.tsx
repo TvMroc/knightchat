@@ -389,11 +389,13 @@ const handleRemoveFriend = async () => {
 
   if (isBlocked) {
     return (
-      <div>
-        <p>You cannot view this profile because you are blocked or have blocked this user.</p>
-        {blockedUsers.includes(uid) && (
-          <button onClick={handleUnblock}>Unblock</button>
-        )}
+      <div className="profile-layout">
+        <div style={{padding: '1em'}}>
+          <p>You cannot view this profile because you are blocked or have blocked this user.</p>
+          {blockedUsers.includes(uid) && (
+            <button className="profile-btn" style={{maxWidth: '24%'}} onClick={handleUnblock}>Unblock</button>
+          )}
+        </div>
       </div>
     );
   }
@@ -519,7 +521,7 @@ const handleRemoveFriend = async () => {
                     Accept Friend
                   </button>)}
                 {blockedUsers.includes(uid) ? (
-                  <button onClick={handleUnblock}>Unblock</button>
+                  <button className="profile-btn" onClick={handleUnblock}>Unblock</button>
                 ) : (
                   <button className="profile-btn-block" onClick={handleBlock}>Block</button>
                 )}
