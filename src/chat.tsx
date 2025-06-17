@@ -53,6 +53,8 @@ const Chat = () => {
   }>({});
   const [sharedPostModal, setSharedPostModal] = useState<Post | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
+  const [isBlockedByChatUser, setIsBlockedByChatUser] = useState(false);
 
 
   // 获取好友列表和昵称映射
@@ -129,7 +131,15 @@ const Chat = () => {
 
   // 发送消息
   const handleSend = async () => {
-    if (input.trim() === "" || !currentUid || !selectedContact?.uid) return;
+    if (
+      input.trim() === "" ||
+      !currentUid ||
+      !selectedContact?.uid ||
+      blockedUsers.includes(selectedContact.uid) || // 我把对方block了
+      isBlockedByChatUser // 对方把我block了
+    )
+      return;
+
     const chatId = [currentUid, selectedContact.uid].sort().join("_");
     await addDoc(collection(db, `chats/${chatId}/messages`), {
       to: selectedContact.uid,
@@ -194,6 +204,34 @@ const Chat = () => {
     return <div className="message-content">{msg.content}</div>;
   };
 
+  useEffect(() => {
+    const fetchBlockedUsers = async () => {
+      if (!currentUid) return;
+      const userDoc = await getDoc(doc(db, "users", currentUid));
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        setBlockedUsers(data.blockedUsers || []);
+      }
+    };
+    fetchBlockedUsers();
+  }, [currentUid]);
+
+  useEffect(() => {
+    const checkIfBlockedByOther = async () => {
+      if (!selectedContact) {
+        setIsBlockedByChatUser(false);
+        return;
+      }
+      const otherDoc = await getDoc(doc(db, "users", selectedContact.uid));
+      if (otherDoc.exists()) {
+        const data = otherDoc.data();
+        const theirBlockedUsers: string[] = data.blockedUsers || [];
+        setIsBlockedByChatUser(theirBlockedUsers.includes(currentUid));
+      }
+    };
+    checkIfBlockedByOther();
+  }, [selectedContact, currentUid]);
+
   return (
     <div className="chat-app">
       <aside className="chat-sidebar">
@@ -248,6 +286,11 @@ const Chat = () => {
             </div>
           )}
         </div>
+        { (blockedUsers.includes(selectedContact?.uid || "") || isBlockedByChatUser) && (
+          <div style={{ color: "red", padding: "10px", textAlign: "center" }}>
+            You cannot send messages to this user due to blocking.
+          </div>
+        )}
         <div className="chat-messages">
           {selectedContact &&
             messages.map((msg, idx) => {
@@ -277,8 +320,17 @@ const Chat = () => {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
             className="chat-input"
+            disabled={
+              blockedUsers.includes(selectedContact?.uid || "") || isBlockedByChatUser
+            }
           />
-          <button className="chat-send" onClick={handleSend}>
+          <button
+            className="chat-send"
+            onClick={handleSend}
+            disabled={
+              blockedUsers.includes(selectedContact?.uid || "") || isBlockedByChatUser
+            }
+          >
             Send
           </button>
         </div>
