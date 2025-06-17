@@ -34,6 +34,7 @@ interface User {
 
 export default function HomePage() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [shownMessages, setShownMessages] = useState<Message[]>();
   const [input, setInput] = useState("");
   const [nicknameMap, setNicknameMap] = useState<{ [uid: string]: { nickname: string; avatarUrl?: string } }>({});
   const [friends, setFriends] = useState<User[]>([]);
@@ -62,8 +63,11 @@ export default function HomePage() {
   
   useEffect(() => {
     fetchUsers();
-    console.log(users);
   },[userSearch])
+
+  useEffect(() => {
+    setShownMessages(messages.filter(m => m.content.includes(messageSearch)));
+  },[messageSearch])
 
 
   useEffect(() => {
@@ -191,23 +195,19 @@ export default function HomePage() {
     <div className="homepage-container">
       <div className="homepage-left">
         <h2 className="homepage-title">Public Tavern</h2>
+        <input style={{margin: '0.5em'}} className="homepage-input" placeholder="search" type="text" value={messageSearch} onChange={(e) => setMessageSearch(e.target.value)}></input>
         <div className="homepage-messages">
-          {messages.map(msg => (
+          {(shownMessages ? shownMessages : messages).map(msg => (
             <div className="homepage-message-item" key={msg.id}>
               <div className="homepage-avatar" onClick={() => navigate(`/profile/${msg.user}`)} title={msg.nickname}>
-                {msg.avatarUrl ? (
-                  <img src={msg.avatarUrl} alt="avatar" className="homepage-avatar-img" />
-                ) : (
-                  (msg.nickname || msg.user).charAt(0).toUpperCase()
-                )}
+                {msg.avatarUrl ? (<img src={msg.avatarUrl} alt="avatar" className="homepage-avatar-img" />
+                ) : ((msg.nickname || msg.user).charAt(0).toUpperCase())}
               </div>
               <span
                 className="homepage-nickname"
                 onClick={() => navigate(`/profile/${msg.user}`)}
                 title={msg.nickname}
-              >
-                {msg.nickname}
-              </span>
+              >{msg.nickname}</span>
               <span className="homepage-message-content">{msg.content}</span>
               <span className="homepage-message-time">
                 {msg.createdAt?.toDate?.().toLocaleTimeString?.() || ""}
