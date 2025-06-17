@@ -269,25 +269,27 @@ const PostPage = () => {
 
   return (
     <div className="post-page">
-      <h2>Share your thoughts</h2>
-      <form className="post-form" onSubmit={handlePost}>
-        <textarea
-          className="post-input"
-          placeholder="What's on your mind?"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          rows={3}
-        />
-        <input type="file" accept="image/*" onChange={handleImageChange} />
-        {imagePreview && (
-          <div className="post-image-preview">
-            <img src={imagePreview} alt="preview" />
-          </div>
-        )}
-        <button type="submit" className="post-btn">
-          Post
-        </button>
-      </form>
+      <div className="post-input-box">
+        <h2>Share your thoughts</h2>
+        <form className="post-form" onSubmit={handlePost}>
+          <textarea
+            className="post-input"
+            placeholder="What's on your mind?"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            rows={3}
+          />
+          <input type="file" accept="image/*" onChange={handleImageChange} />
+          {imagePreview && (
+            <div className="post-image-preview">
+              <img src={imagePreview} alt="preview" />
+            </div>
+          )}
+          <button type="submit" className="post-btn">
+            Post
+          </button>
+        </form>
+      </div>
       <div className="post-list">
         {loading && <div>Loading...</div>}
         {posts.map((post) => {

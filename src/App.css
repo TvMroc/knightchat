@@ -181,6 +181,13 @@ h3{
   align-items: center;
   justify-content: center;
   min-height: 60vh;
+  max-width: 500px;
+  border-radius: 12px;
+  width: 100%;
+  justify-self: center;
+  background: #1e1107;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  border: 4px solid #8b5e3c;
 }
 
 .login-container h2 {
@@ -217,5 +224,14 @@ h3{
 
 .login-submit:hover {
   background: #8a5e1a;
+}
+
+.google-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  color: #fff;
+  cursor: pointer;
 }
 

@@ -81,7 +81,7 @@ const Login = () => {
         <span>
           If you don't have an account <a href="#" onClick={() => navigate('/register')}>register</a>
         </span>
-        <div>
+        <div className="google-login">
           Or login with google  <div style={{backgroundColor: '#444444', borderRadius: '10px', height: 40, width: 40, padding: 3, filter: 'drop-shadow(0 0 4em #61dafbaa);'}}><a onClick={googleLogin}><img width={40} height={40} src={googleImg} /></a></div>
         </div>
       </div>

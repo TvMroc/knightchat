@@ -21,6 +21,9 @@ export default function HomePage() {
   const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  if (!currentUid) {
+    navigate('/login');
+  }
   // 获取所有消息
   useEffect(() => {
     const fetchMessages = async () => {
