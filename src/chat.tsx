@@ -84,6 +84,7 @@ const Chat = () => {
           }
         });
         setContacts(users);
+        setNicknameMap(map);
         if (selectedUidFromUrl) {
           setSelectedContact(
             users.find((u) => u.uid === selectedUidFromUrl) || users[0] || null
