@@ -21,12 +21,18 @@ body {
   font-size: 2.2em;
   color: #7a5822;
   text-align: center;
-  margin: 1.5em 0 1em 0;
   letter-spacing: 2px;
+  font-weight: bold;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding: 20px;
+  background: #3a1f0f;
+  border-bottom: 3px groove #c29b7b;
 }
 
 .homepage-messages {
-  height: 500px;
+  padding: 1rem;
+  height: 580px;
   overflow-y: auto;
   padding: 1em 0.5em 1em 0.5em;
   display: flex;
@@ -38,11 +44,10 @@ body {
   display: flex;
   align-items: center;
   gap: 0.7em;
-  background: rgba(170, 122, 47, 0.13);
+  background: #e9d0a4;
+  color: #2b1b0e;
   border-radius: 10px;
   padding: 0.7em 1em;
-  font-size: 1.08em;
-  color: #222;
   box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
 
@@ -93,8 +98,10 @@ body {
 .homepage-input-row {
   display: flex;
   gap: 0.7em;
-  margin: 1.5em 0 1em 0;
+  margin: 0 0 1em 0;
   padding: 0 0.5em;
+  padding-top: 14px;
+  border-top: 1px solid #aa7a2f;
 }
 
 .homepage-input {
@@ -103,7 +110,7 @@ body {
   border: 1px solid #aa7a2f;
   padding: 0.7em 1em;
   font-size: 1.1em;
-  background: #f4ecd7;
+  background: #f7e2c1;
   color: #222;
   font-family: inherit;
 }
@@ -117,8 +124,89 @@ body {
   font-size: 1.1em;
   padding: 0.7em 1.5em;
   cursor: pointer;
-  transition: background 0.18s;
+  transition: background 0.2s, transform 0.1s;
 }
 .homepage-send-btn:hover {
-  background: #7a5822;
+  background: #a26a24;
+  transform: scale(1.05);
+}
+/* eee */
+.homepage-container {
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  background: #3a2415;
+  border: 4px solid #8b5e3c;
+  display: flex;
+  flex-direction: row;
+  max-height: 100vh;
+  width: 96vw;
+  justify-self: center;
+}
+
+.homepage-left {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  background: #1e1107;
+}
+
+.homepage-right {
+  flex: 1;
+  padding: 1rem;
+  border-left: 3px groove #a0764f;
+  overflow-y: auto;
+}
+
+.homepage-friends-title {
+  margin-bottom: 0.5rem;
+}
+
+.homepage-friends-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.homepage-friend-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px groove #2b1404;
+}
+
+.homepage-friend-avatar {
+  width: 48px;
+  height: 48px;
+  background: #ccc;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 48px;
+  font-weight: bold;
+  margin-right: 0.5rem;
+  cursor: pointer;
+}
+
+.homepage-friend-avatar-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+.homepage-friend-nickname {
+  flex-grow: 1;
+  cursor: pointer;
+  color: #ffe2b0;
+  font-weight: bold;
+  text-shadow: 1px 1px #000;
+}
+
+.homepage-chat-btn {
+  padding: 0.2rem 0.5rem;
+  margin-left: 0.5rem;
+  cursor: pointer;
+}
+
+.homepage-friend-empty {
+  color: #888;
 }

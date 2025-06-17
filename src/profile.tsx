@@ -39,7 +39,8 @@ const Profile: React.FC = () => {
   const currentUid = localStorage.getItem("knightchat_user_uid");
   const isSelf = !paramUid || paramUid === currentUid;
   const uid = paramUid || currentUid;
-  const [isFriend, setIsFriend] = useState(false);
+  const [friendStatus, setFriendStatus] = useState<"not_friends" | "request_sent" | "request_received" | "friends">("not_friends");
+
   const [privacy, setPrivacy] = useState(1);
 
   // 弹窗相关
@@ -114,20 +115,37 @@ const Profile: React.FC = () => {
   }, [uid]);
 
   useEffect(() => {
-    if (isSelf || !currentUid || !paramUid) {
-      setIsFriend(false);
-      return;
+  if (isSelf || !currentUid || !paramUid) {
+    setFriendStatus("not_friends");
+    return;
+  }
+
+  const checkFriendStatus = async () => {
+    const currentDoc = await getDoc(doc(db, "users", currentUid));
+    const targetDoc = await getDoc(doc(db, "users", paramUid));
+    if (!currentDoc.exists() || !targetDoc.exists()) return;
+
+    const currentData = currentDoc.data();
+    const targetData = targetDoc.data();
+
+    const currentFriends = currentData.friends || [];
+    const sent = currentData.friendRequestsSent || [];
+    const received = currentData.friendRequestsReceived || [];
+
+    if (currentFriends.includes(paramUid)) {
+      setFriendStatus("friends");
+    } else if (sent.includes(paramUid)) {
+      setFriendStatus("request_sent");
+    } else if (received.includes(paramUid)) {
+      setFriendStatus("request_received");
+    } else {
+      setFriendStatus("not_friends");
     }
-    const checkFriend = async () => {
-      const userDoc = await getDoc(doc(db, "users", currentUid));
-      if (userDoc.exists()) {
-        const data = userDoc.data();
-        const friends: string[] = data.friends || [];
-        setIsFriend(friends.includes(paramUid));
-      }
-    };
-    checkFriend();
-  }, [currentUid, paramUid, isSelf]);
+  };
+
+  checkFriendStatus();
+}, [currentUid, paramUid, isSelf]);
+
 
   const handleLogout = () => {
     localStorage.removeItem("knightchat_user_uid");
@@ -186,22 +204,50 @@ const Profile: React.FC = () => {
   };
 
   const handleAddFriend = async () => {
-    if (!currentUid || !paramUid) return;
-    const userRef = doc(db, "users", currentUid);
-    await updateDoc(userRef, {
-      friends: arrayUnion(paramUid),
-    });
-    setIsFriend(true);
-  };
+  if (!currentUid || !paramUid) return;
 
-  const handleRemoveFriend = async () => {
-    if (!currentUid || !paramUid) return;
-    const userRef = doc(db, "users", currentUid);
-    await updateDoc(userRef, {
-      friends: arrayRemove(paramUid),
-    });
-    setIsFriend(false);
-  };
+  await updateDoc(doc(db, "users", currentUid), {
+    friendRequestsSent: arrayUnion(paramUid),
+  });
+
+  await updateDoc(doc(db, "users", paramUid), {
+    friendRequestsReceived: arrayUnion(currentUid),
+  });
+
+  setFriendStatus("request_sent");
+};
+
+const handleAcceptFriend = async () => {
+  if (!currentUid || !paramUid) return;
+
+  await updateDoc(doc(db, "users", currentUid), {
+    friends: arrayUnion(paramUid),
+    friendRequestsReceived: arrayRemove(paramUid),
+  });
+
+  await updateDoc(doc(db, "users", paramUid), {
+    friends: arrayUnion(currentUid),
+    friendRequestsSent: arrayRemove(currentUid),
+  });
+
+  setFriendStatus("friends");
+};
+
+const handleRemoveFriend = async () => {
+  if (!currentUid || !paramUid) return;
+
+  await updateDoc(doc(db, "users", currentUid), {
+    friends: arrayRemove(paramUid),
+  });
+
+  await updateDoc(doc(db, "users", paramUid), {
+    friends: arrayRemove(currentUid),
+  });
+
+  setFriendStatus("not_friends");
+};
+
+
 
   const handleChat = () => {
     if (paramUid) navigate(`/chat/${paramUid}`);
@@ -212,7 +258,7 @@ const Profile: React.FC = () => {
   if (!isSelf) {
     if (privacy === 3) {
       canShowDetail = false;
-    } else if (privacy === 2 && !isFriend) {
+    } else if (privacy === 2 && !(friendStatus == 'friends')) {
       canShowDetail = false;
     }
   }
@@ -377,13 +423,24 @@ const Profile: React.FC = () => {
                 <button className="profile-btn" onClick={handleChat}>
                   Chat
                 </button>
-                {isFriend ? (
+                {friendStatus === "friends" && (
                   <button className="profile-btn profile-btn-cancel" onClick={handleRemoveFriend}>
                     Remove Friend
                   </button>
-                ) : (
+                )}
+                {friendStatus === "not_friends" && (
                   <button className="profile-btn" onClick={handleAddFriend}>
                     Add Friend
+                  </button>
+                )}
+                {friendStatus === "request_sent" && (
+                  <button className="profile-btn" disabled>
+                    Request Sent
+                  </button>
+                )}
+                {friendStatus === "request_received" && (
+                  <button className="profile-btn" onClick={handleAcceptFriend}>
+                    Accept Friend
                   </button>
                 )}
               </div>

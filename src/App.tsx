@@ -6,7 +6,6 @@ import Register from './register';
 import Chat from './chat';
 import Post from './post';
 import Profile from './profile';
-import Friends from './friends';
 import HomePage from './home'; 
 
 function App() {
@@ -22,7 +21,6 @@ function App() {
         <Route path="/post" element={<Post />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/profile/:uid" element={<Profile />} />
-        <Route path="/friends" element={<Friends />} />
       </Routes>
     </Router>
   );
