@@ -288,7 +288,6 @@ const Chat = () => {
           <div className="modal-content">
             <SharedPostInModal
               post={sharedPostModal}
-              nicknameMap={nicknameMap}
               currentUid={currentUid}
               onClose={() => setSharedPostModal(null)}
               fetchPosts={getMessages}

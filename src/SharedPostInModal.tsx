@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Timestamp, doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
+import { Timestamp, doc, updateDoc, arrayUnion, arrayRemove, collection, getDocs } from "firebase/firestore";
 import { db } from "./Firebase"; // 请替换成你的firebase初始化文件路径
 import { useNavigate } from "react-router-dom";
 
@@ -23,8 +23,7 @@ interface Post {
 
 interface SharedPostInModalProps {
   post: Post;
-  nicknameMap: Record<string, { nickname?: string }>;
-  currentUid: string | null;
+  currentUid: string;
   onClose: () => void;
   fetchPosts: () => void; // 你现有刷新帖子列表函数
 }
@@ -36,7 +35,6 @@ const needsShowMore = (text: string, maxLines: number) => {
 
 export const SharedPostInModal: React.FC<SharedPostInModalProps> = ({
   post,
-  nicknameMap,
   currentUid,
   onClose,
   fetchPosts,
@@ -51,9 +49,36 @@ export const SharedPostInModal: React.FC<SharedPostInModalProps> = ({
   const [likes, setLikes] = useState<string[]>(post.likes || []);
   const [comments, setComments] = useState<Comment[]>(post.comments || []);
 
+  // 新增：内部状态存昵称映射
+  const [nicknameMap, setNicknameMap] = useState<Record<string, { nickname?: string; avatarUrl?: string }>>({});
+  const [loadingUsers, setLoadingUsers] = useState(true);
+
   const COMMENTS_TO_SHOW = 3;
   const showComments = isCommentsExpanded ? comments : comments.slice(0, COMMENTS_TO_SHOW);
   const hasMoreComments = comments.length > COMMENTS_TO_SHOW;
+
+  // 新增：获取所有用户昵称映射
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoadingUsers(true);
+      try {
+        const usersCol = collection(db, "users");
+        const usersSnapshot = await getDocs(usersCol);
+        const map: Record<string, { nickname?: string; avatarUrl?: string }> = {};
+        usersSnapshot.forEach(doc => {
+          const data = doc.data();
+          map[doc.id] = { nickname: data.nickname, avatarUrl: data.avatarUrl };
+        });
+        setNicknameMap(map);
+      } catch (error) {
+        console.error("Failed to load users:", error);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const handleLike = async () => {
     const postRef = doc(db, "posts", post.id);
@@ -86,6 +111,10 @@ export const SharedPostInModal: React.FC<SharedPostInModalProps> = ({
     setCommentInput("");
     fetchPosts();
   };
+
+  if (loadingUsers) {
+    return <div>Loading user data...</div>;
+  }
 
   return (
     <div className="shared-post-modal">
@@ -154,7 +183,10 @@ export const SharedPostInModal: React.FC<SharedPostInModalProps> = ({
         <div className="post-comments-text">
           {showComments.map((c, idx) => (
             <div key={idx} className="post-comment-item">
-              <b>{nicknameMap[c.user]?.nickname || c.user}:</b> {c.text}
+              <b>
+                {nicknameMap[c.user]?.nickname || c.user}:
+              </b>{" "}
+              {c.text}
             </div>
           ))}
           {hasMoreComments && !isCommentsExpanded && (
@@ -184,3 +216,4 @@ export const SharedPostInModal: React.FC<SharedPostInModalProps> = ({
     </div>
   );
 };
+export default SharedPostInModal;
