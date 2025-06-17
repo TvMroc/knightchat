@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { db } from "./Firebase";
+import { db, auth } from "./Firebase";
 import { doc, getDoc, updateDoc, collection, query, where, orderBy, getDocs, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
@@ -36,7 +36,7 @@ const Profile: React.FC = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { uid: paramUid } = useParams();
-  const currentUid = localStorage.getItem("knightchat_user_uid");
+  const currentUid = auth.currentUser?.uid || "";
   const isSelf = !paramUid || paramUid === currentUid;
   const uid = paramUid || currentUid;
   const [friendStatus, setFriendStatus] = useState<"not_friends" | "request_sent" | "request_received" | "friends">("not_friends");
@@ -53,6 +53,10 @@ const Profile: React.FC = () => {
 
   // 评论用户昵称映射
   const [nicknameMap, setNicknameMap] = useState<{ [uid: string]: string }>({});
+
+  const [profileData, setProfileData] = useState<any>(null);
+  const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
+  const [isBlocked, setIsBlocked] = useState(false);
 
   useEffect(() => {
     if (!uid) {
@@ -325,6 +329,78 @@ const handleRemoveFriend = async () => {
       }))
     );
   };
+  
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!uid) return;
+
+      // 获取当前用户的 blockedUsers 列表
+      if (currentUid) {
+        const currentUserDoc = await getDoc(doc(db, "users", currentUid));
+        if (currentUserDoc.exists()) {
+          const data = currentUserDoc.data();
+          const blocked = data.blockedUsers || [];
+          setBlockedUsers(blocked);
+        }
+      }
+
+      // 获取访问用户资料
+      const profileDoc = await getDoc(doc(db, "users", uid));
+      if (!profileDoc.exists()) {
+        setProfileData(null);
+        return;
+      }
+      const profile = profileDoc.data();
+
+      // 被访问用户是否block了当前用户（双向block考虑）
+      const profileBlockedUsers: string[] = profile.blockedUsers || [];
+
+      if (profileBlockedUsers.includes(currentUid) || blockedUsers.includes(uid)) {
+        setIsBlocked(true);
+        setProfileData(null);
+        return;
+      }
+
+      setIsBlocked(false);
+      setProfileData(profile);
+    };
+
+    fetchProfile();
+  }, [uid, currentUid, blockedUsers]);
+
+
+  const handleBlock = async () => {
+    if (!currentUid || !uid) return;
+    const userRef = doc(db, "users", currentUid);
+    await updateDoc(userRef, {
+      blockedUsers: arrayUnion(uid),
+    });
+    setBlockedUsers((prev) => [...prev, uid]);
+  };
+
+  const handleUnblock = async () => {
+    if (!currentUid || !uid) return;
+    const userRef = doc(db, "users", currentUid);
+    await updateDoc(userRef, {
+      blockedUsers: arrayRemove(uid),
+    });
+    setBlockedUsers((prev) => prev.filter((id) => id !== uid));
+  };
+
+  if (isBlocked) {
+    return (
+      <div>
+        <p>You cannot view this profile because you are blocked or have blocked this user.</p>
+        {blockedUsers.includes(uid) && (
+          <button onClick={handleUnblock}>Unblock</button>
+        )}
+      </div>
+    );
+  }
+
+  if (!profileData) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="profile-layout">
@@ -441,7 +517,11 @@ const handleRemoveFriend = async () => {
                 {friendStatus === "request_received" && (
                   <button className="profile-btn" onClick={handleAcceptFriend}>
                     Accept Friend
-                  </button>
+                  </button>)}
+                {blockedUsers.includes(uid) ? (
+                  <button onClick={handleUnblock}>Unblock</button>
+                ) : (
+                  <button onClick={handleBlock}>Block</button>
                 )}
               </div>
             )}
