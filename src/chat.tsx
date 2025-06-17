@@ -1,15 +1,34 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { db } from "./Firebase";
-import { collection, addDoc, query, orderBy, getDocs, getDoc, doc, Timestamp } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  query,
+  orderBy,
+  getDocs,
+  getDoc,
+  doc,
+  Timestamp,
+} from "firebase/firestore";
 import "./chat.css";
+import { SharedPostInModal } from "./SharedPostInModal";
+
+interface Post {
+  id: string;
+  author: string;
+  createdAt: any;
+  content: string;
+  imageUrl?: string;
+  // 你Post类型里其他字段也可以加上
+}
 
 interface Message {
   id?: string;
   to: string;
   content: string;
   time: Timestamp;
-  user?: string; 
+  user?: string;
   postId?: string;
   imageUrl?: string;
 }
@@ -28,11 +47,14 @@ const Chat = () => {
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [nicknameMap, setNicknameMap] = useState<{ [uid: string]: { nickname: string; avatarUrl?: string } }>({});
-  const [sharedPostModal, setSharedPostModal] = useState<{ postId: string; content: string; imageUrl?: string } | null>(null);
+  const [nicknameMap, setNicknameMap] = useState<{
+    [uid: string]: { nickname: string; avatarUrl?: string };
+  }>({});
+  const [sharedPostModal, setSharedPostModal] = useState<Post | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
+  // 获取好友列表和昵称映射
   useEffect(() => {
     const fetchFriends = async () => {
       if (!currentUid) return;
@@ -40,10 +62,13 @@ const Chat = () => {
       if (userDoc.exists()) {
         const data = userDoc.data();
         const friendUids: string[] = data.friends || [];
-        const friends = await Promise.all(friendUids.map(uid => getDoc(doc(db, "users", uid))));
+        const friends = await Promise.all(
+          friendUids.map((uid) => getDoc(doc(db, "users", uid)))
+        );
         const users: Contact[] = [];
-        const map: { [uid: string]: { nickname: string; avatarUrl?: string } } = {};
-        friends.forEach(friend => {
+        const map: { [uid: string]: { nickname: string; avatarUrl?: string } } =
+          {};
+        friends.forEach((friend) => {
           if (friend.exists()) {
             const friendData = friend.data();
             users.push({
@@ -61,7 +86,9 @@ const Chat = () => {
         setContacts(users);
         setNicknameMap(map);
         if (selectedUidFromUrl) {
-          setSelectedContact(users.find(u => u.uid === selectedUidFromUrl) || users[0] || null);
+          setSelectedContact(
+            users.find((u) => u.uid === selectedUidFromUrl) || users[0] || null
+          );
         } else {
           setSelectedContact(users[0] || null);
         }
@@ -71,12 +98,16 @@ const Chat = () => {
     // eslint-disable-next-line
   }, []);
 
+  // 获取聊天消息
   const getMessages = async () => {
     if (!currentUid || !selectedContact?.uid) return;
     const chatId = [currentUid, selectedContact.uid].sort().join("_");
-    const q = query(collection(db, `chats/${chatId}/messages`), orderBy("createdAt", "asc"));
+    const q = query(
+      collection(db, `chats/${chatId}/messages`),
+      orderBy("createdAt", "asc")
+    );
     const snapshot = await getDocs(q);
-    const arr = snapshot.docs.map(doc => ({
+    const arr = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     })) as Message[];
@@ -92,6 +123,7 @@ const Chat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // 发送消息
   const handleSend = async () => {
     if (input.trim() === "" || !currentUid || !selectedContact?.uid) return;
     const chatId = [currentUid, selectedContact.uid].sort().join("_");
@@ -106,16 +138,52 @@ const Chat = () => {
     getMessages();
   };
 
+  // 点击共享帖子消息，异步拉取完整帖子数据打开弹窗
+  const openSharedPostModal = async (
+    postId: string,
+    fallbackContent: string,
+    imageUrl?: string
+  ) => {
+    const postDoc = await getDoc(doc(db, "posts", postId));
+    if (postDoc.exists()) {
+      const postData = postDoc.data() as Post;
+      setSharedPostModal({
+        ...postData,
+        id: postDoc.id,
+      });
+    } else {
+      // 备用，数据缺失时也能打开弹窗
+      setSharedPostModal({
+        id: postId,
+        author: "",
+        createdAt: null,
+        content: fallbackContent,
+        imageUrl,
+      });
+    }
+  };
+
+  // 渲染消息内容，带有共享帖子
   const renderMessageContent = (msg: Message) => {
     if (msg.postId) {
       return (
         <div
           className="chat-shared-post"
-          onClick={() => setSharedPostModal({ postId: msg.postId!, content: msg.content.replace('[Shared Post]\n', ''), imageUrl: msg.imageUrl })}
+          onClick={() =>
+            openSharedPostModal(
+              msg.postId!,
+              msg.content.replace("[Shared Post]\n", ""),
+              msg.imageUrl
+            )
+          }
           style={{ cursor: "pointer" }}
         >
-          {msg.imageUrl && <img src={msg.imageUrl} alt="post" className="chat-shared-post-img" />}
-          <div className="chat-shared-post-content">{msg.content.replace('[Shared Post]\n', '')}</div>
+          {msg.imageUrl && (
+            <img src={msg.imageUrl} alt="post" className="chat-shared-post-img" />
+          )}
+          <div className="chat-shared-post-content">
+            {msg.content.replace("[Shared Post]\n", "")}
+          </div>
         </div>
       );
     }
@@ -128,7 +196,11 @@ const Chat = () => {
         <div className="sidebar-header">Chats</div>
         <ul className="contact-list">
           {contacts.map((c) => (
-            <li key={c.uid} className={selectedContact?.uid === c.uid ? "active" : ""} onClick={() => setSelectedContact(c)}>
+            <li
+              key={c.uid}
+              className={selectedContact?.uid === c.uid ? "active" : ""}
+              onClick={() => setSelectedContact(c)}
+            >
               <div className="contact-avatar">
                 {c.avatarUrl ? (
                   <img src={c.avatarUrl} alt="avatar" className="contact-avatar-img" />
@@ -137,9 +209,7 @@ const Chat = () => {
                 )}
               </div>
               <div className="contact-info">
-                <div className="contact-name">
-                  {c.nickname}
-                </div>
+                <div className="contact-name">{c.nickname}</div>
               </div>
             </li>
           ))}
@@ -155,7 +225,11 @@ const Chat = () => {
                 style={{ cursor: "pointer" }}
               >
                 {selectedContact.avatarUrl ? (
-                  <img src={selectedContact.avatarUrl} alt="avatar" className="chat-avatar-img" />
+                  <img
+                    src={selectedContact.avatarUrl}
+                    alt="avatar"
+                    className="chat-avatar-img"
+                  />
                 ) : (
                   selectedContact.nickname.charAt(0).toUpperCase()
                 )}
@@ -171,17 +245,24 @@ const Chat = () => {
           )}
         </div>
         <div className="chat-messages">
-          {selectedContact && messages.map((msg, idx) => {
-            const isMe = (msg.user || currentUid) === currentUid;
-            return (
-              <div className={`chat-message ${isMe ? "me" : "other"}`} key={msg.id || idx}>
-                {renderMessageContent(msg)}
-                <div className="message-meta">
-                  {msg.time && msg.time.toDate().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          {selectedContact &&
+            messages.map((msg, idx) => {
+              const isMe = (msg.user || currentUid) === currentUid;
+              return (
+                <div
+                  className={`chat-message ${isMe ? "me" : "other"}`}
+                  key={msg.id || idx}
+                >
+                  {renderMessageContent(msg)}
+                  <div className="message-meta">
+                    {msg.time &&
+                      msg.time
+                        .toDate()
+                        .toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
           <div ref={messagesEndRef} />
         </div>
         <div className="chat-input-area">
@@ -190,22 +271,24 @@ const Chat = () => {
             placeholder="Type a message"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && handleSend()}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
             className="chat-input"
           />
-          <button className="chat-send" onClick={handleSend}>Send</button>
+          <button className="chat-send" onClick={handleSend}>
+            Send
+          </button>
         </div>
       </main>
       {sharedPostModal && (
-        <div className="post-modal-mask" onClick={() => setSharedPostModal(null)}>
-          <div className="post-modal-content" onClick={e => e.stopPropagation()}>
-            <div className="post-content expanded">{sharedPostModal.content}</div>
-            {sharedPostModal.imageUrl && (
-              <div className="post-image-block">
-                <img src={sharedPostModal.imageUrl} alt="post" />
-              </div>
-            )}
-            <button className="post-btn" onClick={() => setSharedPostModal(null)}>Close</button>
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <SharedPostInModal
+              post={sharedPostModal}
+              nicknameMap={nicknameMap}
+              currentUid={currentUid}
+              onClose={() => setSharedPostModal(null)}
+              fetchPosts={getMessages}
+            />
           </div>
         </div>
       )}
