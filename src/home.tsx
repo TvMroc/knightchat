@@ -36,7 +36,6 @@ export default function HomePage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [shownMessages, setShownMessages] = useState<Message[]>();
   const [input, setInput] = useState("");
-  const [nicknameMap, setNicknameMap] = useState<{ [uid: string]: { nickname: string; avatarUrl?: string } }>({});
   const [friends, setFriends] = useState<User[]>([]);
   const [friendRequests, setFriendRequests] = useState<User[]>([]);
   const [messageSearch, setMessageSearch] = useState("");
@@ -69,43 +68,48 @@ export default function HomePage() {
     setShownMessages(messages.filter(m => m.content.includes(messageSearch)));
   },[messageSearch])
 
+  const fetchMessages = async () => {
+    const q = query(collection(db, "public-messages"), orderBy("createdAt", "asc"));
+    const snapshot = await getDocs(q);
+    const arr = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...(doc.data() as Omit<Message, "id">),
+    }));
 
-  useEffect(() => {
-    if (!currentUid) navigate("/login");
+    const uids = Array.from(new Set(arr.map(m => m.user)));
+    const usersSnapshot = await getDocs(collection(db, "users"));
+    const map: { [uid: string]: { nickname: string; avatarUrl?: string } } = {};
+    usersSnapshot.forEach(userDoc => {
+      const data = userDoc.data();
+      if (uids.includes(userDoc.id)) {
+        map[userDoc.id] = {
+          nickname: data.nickname || userDoc.id,
+          avatarUrl: data.avatarUrl || "",
+        };
+      }
+  });
 
-    const fetchMessages = async () => {
-      const q = query(collection(db, "public-messages"), orderBy("createdAt", "asc"));
-      const snapshot = await getDocs(q);
-      const arr = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...(doc.data() as Omit<Message, "id">),
-      }));
-
-      const uids = Array.from(new Set(arr.map(m => m.user)));
-      const usersSnapshot = await getDocs(collection(db, "users"));
-      const map: { [uid: string]: { nickname: string; avatarUrl?: string } } = {};
-      usersSnapshot.forEach(userDoc => {
-        const data = userDoc.data();
-        if (uids.includes(userDoc.id)) {
-          map[userDoc.id] = {
-            nickname: data.nickname || userDoc.id,
-            avatarUrl: data.avatarUrl || "",
-          };
-        }
-      });
-
-      setNicknameMap(map);
-      setMessages(
-        arr.map(m => ({
+      const fetchedMessages = arr.map(m => ({
           ...m,
           nickname: map[m.user]?.nickname || m.user,
           avatarUrl: map[m.user]?.avatarUrl || "",
-        }))
-      );
+        }));
+      setMessages(fetchedMessages);
+      setShownMessages(fetchedMessages);
     };
 
+  useEffect(() => {
+    if (!currentUid) navigate("/login");
     fetchMessages();
   }, []);
+
+  useEffect(() => {
+    const fetchAndUpdateMessages = async () => {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      fetchMessages();
+    };
+    fetchAndUpdateMessages();
+  });
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -122,19 +126,7 @@ export default function HomePage() {
     });
     setInput("");
 
-    const q = query(collection(db, "public-messages"), orderBy("createdAt", "asc"));
-    const snapshot = await getDocs(q);
-    const arr = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...(doc.data() as Omit<Message, "id">),
-    }));
-    setMessages(
-      arr.map(m => ({
-        ...m,
-        nickname: nicknameMap[m.user]?.nickname || m.user,
-        avatarUrl: nicknameMap[m.user]?.avatarUrl || "",
-      }))
-    );
+    fetchMessages();
   };
 
   useEffect(() => {
@@ -228,7 +220,7 @@ export default function HomePage() {
       </div>
 
       <div className="homepage-right">
-        <h3 className="homepage-friends-title">My Friends</h3>
+        <h3 className="homepage-friends-title">Friends</h3>
         <ul className="homepage-friends-list">
           {friends.length === 0 && <li className="homepage-friend-empty">No friends yet.</li>}
           {friends.map(f => (

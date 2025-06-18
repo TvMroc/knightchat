@@ -52,7 +52,7 @@ const Chat = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
   const [isBlockedByChatUser, setIsBlockedByChatUser] = useState(false);
-
+  let interval: NodeJS.Timeout | null = null;
 
   // 获取好友列表和昵称映射
   useEffect(() => {
@@ -123,7 +123,21 @@ const Chat = () => {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, []);
+
+  useEffect(() => {
+    
+    if (selectedContact) {
+      getMessages();
+      interval = setInterval(() => {
+        getMessages();
+      }, 3000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+    // eslint-disable-next-line
+  }, [selectedContact]);
 
   // 发送消息
   const handleSend = async () => {
@@ -145,7 +159,7 @@ const Chat = () => {
       createdAt: Timestamp.now(),
     });
     setInput("");
-    getMessages();
+    if (interval) clearInterval(interval);
   };
 
   // 点击共享帖子消息，异步拉取完整帖子数据打开弹窗
