@@ -46,6 +46,7 @@ const PostPage = () => {
   const [editContent, setEditContent] = useState("");
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const navigate = useNavigate();
+  let interval: NodeJS.Timeout | null = null;
 
   if (!currentUid) {
     navigate('/login');
@@ -132,6 +133,20 @@ const PostPage = () => {
     })));
     setLoading(false);
   };
+  
+  useEffect(() => {
+    
+    if (currentUid) {
+      fetchPosts();
+      interval = setInterval(() => {
+        fetchPosts();
+      }, 3000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [currentUid]);
+  
 
   useEffect(() => {
     fetchPosts();
@@ -301,7 +316,7 @@ const PostPage = () => {
         </form>
       </div>
       <div className="post-list">
-        {loading && <div>Loading...</div>}
+        {(loading && !posts) && <div>Loading...</div>}
         {posts.map((post) => {
           const isExpanded = expandedPosts[post.id];
           const isCommentsExpanded = expandedComments[post.id];

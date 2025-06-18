@@ -126,7 +126,6 @@ const Chat = () => {
   }, []);
 
   useEffect(() => {
-    
     if (selectedContact) {
       getMessages();
       interval = setInterval(() => {
@@ -136,7 +135,6 @@ const Chat = () => {
     return () => {
       if (interval) clearInterval(interval);
     };
-    // eslint-disable-next-line
   }, [selectedContact]);
 
   // 发送消息
