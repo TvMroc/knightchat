@@ -105,15 +105,17 @@ export default function HomePage() {
 
   useEffect(() => {
     const fetchAndUpdateMessages = async () => {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 3000));
       fetchMessages();
     };
     fetchAndUpdateMessages();
   });
 
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    setTimeout(() => {messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })}, 500);
+  }, []); 
+     
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
